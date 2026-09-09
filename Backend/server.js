@@ -93,6 +93,17 @@ const properties = [
     }
 ];
 
+//Payment statuses
+const PAYMENT_STATUSES = Object.freeze({
+    PENDING: "PENDING",
+    STK_INITIATED: "STK_INITIATED",
+    PROCESSING: "PROCESSING",
+    SUCCESS: "SUCCESS",
+    FAILED: "FAILED",
+    CANCELLED: "CANCELLED",
+    REFUNDED: "REFUNDED"
+});
+
 function calculateDistanceInKilometres(first, second) {
 
     const earthRadius = 6371;
@@ -584,7 +595,7 @@ app.patch("/api/owners/:ownerId/bookings/:bookingId", (req, res) => {
 
                 phone_number: null,
 
-                status: "PENDING",
+                status: PAYMENT_STATUSES.PENDING,
 
                 callback_data: null,
 
@@ -641,7 +652,7 @@ app.patch("/api/notifications/:notificationId/read", (req, res) => {
 
 });
 
-app.post("/api/payments/:paymentRequestId/confirm", (req, res) => {
+/*app.post("/api/payments/:paymentRequestId/confirm", (req, res) => {
 
     const paymentRequest = paymentRequests.find(item => item.payment_request_id === Number(req.params.paymentRequestId));
     const supportedMethods = ["mpesa", "card", "bank_transfer"];
@@ -711,6 +722,55 @@ app.post("/api/payments/:paymentRequestId/confirm", (req, res) => {
         booking
     });
 
+});   */
+// Simulated M-Pesa STK Push initiation endpoint
+app.post("/api/payments/:paymentRequestId/stk-push", (req, res) => {
+    const paymentRequestId = Number(req.params.paymentRequestId);
+
+    const paymentRequest = paymentRequests.find(
+        item => item.payment_request_id === paymentRequestId
+    );
+
+    if (!paymentRequest) {
+        return res.status(404).json({
+            success: false,
+            message: "Payment request not found."
+        });
+    }
+
+    if (paymentRequest.status !== PAYMENT_STATUSES.PENDING) {
+        return res.status(409).json({
+            success: false,
+            message: `Payment cannot be initiated from ${paymentRequest.status} status.`
+        });
+    }
+
+    const phoneNumber = String(req.body.phoneNumber || "").trim();
+
+    if (!phoneNumber) {
+        return res.status(400).json({
+            success: false,
+            message: "M-Pesa phone number is required."
+        });
+    }
+
+    paymentRequest.method = "MPESA";
+    paymentRequest.provider = "PAYHERO";
+    paymentRequest.phone_number = phoneNumber;
+    paymentRequest.status = PAYMENT_STATUSES.STK_INITIATED;
+    paymentRequest.updated_at = new Date();
+
+    return res.status(202).json({
+        success: true,
+        message: "Payment initiation accepted.",
+        payment: {
+            payment_request_id: paymentRequest.payment_request_id,
+            internal_reference: paymentRequest.internal_reference,
+            amount: paymentRequest.amount,
+            currency: paymentRequest.currency,
+            status: paymentRequest.status
+        }
+    });
 });
 
 app.patch("/api/admin/payments/:paymentRequestId/refund", (req, res) => {
