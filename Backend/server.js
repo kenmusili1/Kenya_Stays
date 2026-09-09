@@ -566,12 +566,30 @@ app.patch("/api/owners/:ownerId/bookings/:bookingId", (req, res) => {
             bookingId: booking.booking_id
         });
         paymentRequests.push({
-            payment_request_id: paymentRequests.length + 1,
-            booking_id: booking.booking_id,
-            customer_id: booking.customer_id,
-            amount: booking.amount,
-            status: "PENDING",
-            created_at: now
+                payment_request_id: paymentRequests.length + 1,
+
+                booking_id: booking.booking_id,
+                customer_id: booking.customer_id,
+
+                amount: Number(booking.amount),
+                currency: "KES",
+
+                provider: null,
+                method: null,
+
+                internal_reference: `KS-PAY-${Date.now()}-${booking.booking_id}`,
+
+                payhero_reference: null,
+                checkout_request_id: null,
+
+                phone_number: null,
+
+                status: "PENDING",
+
+                callback_data: null,
+
+                created_at: now,
+                updated_at: now
         });
 
     }
