@@ -1,0 +1,367 @@
+```javascript
+/* =====================================================
+   KENYA AIRBNB COUNTY DIRECTORY
+   JAVASCRIPT
+
+   County information is loaded from:
+   data/counties.json
+===================================================== */
+
+
+/* ================= HTML ELEMENTS ================= */
+
+const countyGrid =
+    document.getElementById("countyGrid");
+
+const searchInput =
+    document.getElementById("searchInput");
+
+const sortSelect =
+    document.getElementById("sortSelect");
+
+const resultsMessage =
+    document.getElementById("resultsMessage");
+
+const currentYear =
+    document.getElementById("currentYear");
+
+
+/* ================= COUNTY DATA ================= */
+
+let counties = [];
+
+
+/* ================= LOAD JSON DATA ================= */
+
+async function loadCounties() {
+
+    try {
+
+        const response =
+            await fetch("data/counties.json");
+
+
+        /* Check whether the file was found */
+
+        if (!response.ok) {
+
+            throw new Error(
+                `Unable to load counties.json. Status: ${response.status}`
+            );
+
+        }
+
+
+        /* Convert JSON to JavaScript */
+
+        counties =
+            await response.json();
+
+
+        /* Display counties */
+
+        displayCounties(counties);
+
+
+    } catch (error) {
+
+        console.error(
+            "Error loading county data:",
+            error
+        );
+
+
+        countyGrid.innerHTML = `
+
+            <div class="county-card">
+
+                <h3>
+                    Unable to Load County Data
+                </h3>
+
+                <p>
+                    Please make sure that
+                    <strong>data/counties.json</strong>
+                    exists and that you are running
+                    the website using Live Server.
+                </p>
+
+            </div>
+
+        `;
+
+        resultsMessage.textContent =
+            "County data could not be loaded.";
+
+    }
+
+}
+
+
+/* ================= DISPLAY COUNTIES ================= */
+
+function displayCounties(data) {
+
+    countyGrid.innerHTML = "";
+
+
+    /* No results */
+
+    if (data.length === 0) {
+
+        countyGrid.innerHTML = `
+
+            <div class="county-card">
+
+                <h3>
+                    No County Found
+                </h3>
+
+                <p>
+                    Please try another county name.
+                </p>
+
+            </div>
+
+        `;
+
+        resultsMessage.textContent =
+            "No counties matched your search.";
+
+        return;
+
+    }
+
+
+    /* Results count */
+
+    resultsMessage.textContent =
+        `Showing ${data.length} of ${counties.length} counties.`;
+
+
+    /* Generate cards */
+
+    data.forEach(county => {
+
+        const card =
+            document.createElement("article");
+
+
+        card.className =
+            "county-card";
+
+
+        /*
+            If listings = 0, show
+            "Data unavailable" instead
+            of pretending there are zero listings.
+        */
+
+        const listingDisplay =
+            county.listings > 0
+                ? county.listings.toLocaleString()
+                : "Data unavailable";
+
+
+        const shareDisplay =
+            county.listings > 0
+                ? county.share
+                : "Data unavailable";
+
+
+        card.innerHTML = `
+
+            <div class="county-header">
+
+                <h3>
+                    ${county.county} County
+                </h3>
+
+                <span class="county-number">
+                    #${county.id}
+                </span>
+
+            </div>
+
+
+            <div class="county-info">
+
+
+                <div class="info-row">
+
+                    <span class="info-label">
+                        Region
+                    </span>
+
+                    <span class="info-value">
+                        ${county.region}
+                    </span>
+
+                </div>
+
+
+                <div class="info-row">
+
+                    <span class="info-label">
+                        Reported Listings
+                    </span>
+
+                    <span class="info-value">
+                        ${listingDisplay}
+                    </span>
+
+                </div>
+
+
+                <div class="info-row">
+
+                    <span class="info-label">
+                        National Share
+                    </span>
+
+                    <span class="info-value">
+                        ${shareDisplay}
+                    </span>
+
+                </div>
+
+
+                <div class="info-row">
+
+                    <span class="info-label">
+                        Data Source
+                    </span>
+
+                    <span class="info-value">
+                        ${county.source}
+                    </span>
+
+                </div>
+
+
+                <div class="info-row">
+
+                    <span class="info-label">
+                        Data Year
+                    </span>
+
+                    <span class="info-value">
+                        ${county.date}
+                    </span>
+
+                </div>
+
+
+            </div>
+
+
+            <a
+                class="county-button"
+                href="https://www.airbnb.com/s/${encodeURIComponent(county.county)}--Kenya/homes"
+                target="_blank"
+                rel="noopener noreferrer">
+
+                Search Stays
+
+            </a>
+
+        `;
+
+
+        countyGrid.appendChild(card);
+
+    });
+
+}
+
+
+/* ================= SEARCH ================= */
+
+function searchCounties() {
+
+    const searchTerm =
+        searchInput.value
+        .trim()
+        .toLowerCase();
+
+
+    const filteredCounties =
+        counties.filter(county =>
+
+            county.county
+                .toLowerCase()
+                .includes(searchTerm)
+
+        );
+
+
+    displayCounties(filteredCounties);
+
+}
+
+
+/* ================= SORT ================= */
+
+function sortCounties() {
+
+    const selectedValue =
+        sortSelect.value;
+
+
+    let sortedCounties =
+        [...counties];
+
+
+    /* Sort by number of listings */
+
+    if (selectedValue === "listings") {
+
+        sortedCounties.sort(
+            (a, b) =>
+                b.listings - a.listings
+        );
+
+    }
+
+
+    /* Sort alphabetically */
+
+    if (selectedValue === "name") {
+
+        sortedCounties.sort(
+            (a, b) =>
+                a.county.localeCompare(b.county)
+        );
+
+    }
+
+
+    displayCounties(sortedCounties);
+
+}
+
+
+/* ================= EVENT LISTENERS ================= */
+
+searchInput.addEventListener(
+    "input",
+    searchCounties
+);
+
+
+sortSelect.addEventListener(
+    "change",
+    sortCounties
+);
+
+
+/* ================= CURRENT YEAR ================= */
+
+currentYear.textContent =
+    new Date().getFullYear();
+
+
+/* ================= START WEBSITE ================= */
+
+loadCounties();
+```

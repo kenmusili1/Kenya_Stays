@@ -1,0 +1,471 @@
+[
+    {
+        "id": 1,
+        "county": "Mombasa",
+        "region": "Coast",
+        "listings": 3649,
+        "share": "10.6%",
+        "source": "Inside Airbnb",
+        "date": "2026"
+    },
+
+    {
+        "id": 2,
+        "county": "Kwale",
+        "region": "Coast",
+        "listings": 1590,
+        "share": "4.6%",
+        "source": "Inside Airbnb",
+        "date": "2026"
+    },
+
+    {
+        "id": 3,
+        "county": "Kilifi",
+        "region": "Coast",
+        "listings": 2404,
+        "share": "7.0%",
+        "source": "Inside Airbnb",
+        "date": "2026"
+    },
+
+    {
+        "id": 4,
+        "county": "Tana River",
+        "region": "Coast",
+        "listings": 0,
+        "share": "0%",
+        "source": "Data not currently available",
+        "date": "2026"
+    },
+
+    {
+        "id": 5,
+        "county": "Lamu",
+        "region": "Coast",
+        "listings": 0,
+        "share": "0%",
+        "source": "Data not currently available",
+        "date": "2026"
+    },
+
+    {
+        "id": 6,
+        "county": "Taita-Taveta",
+        "region": "Coast",
+        "listings": 0,
+        "share": "0%",
+        "source": "Data not currently available",
+        "date": "2026"
+    },
+
+    {
+        "id": 7,
+        "county": "Garissa",
+        "region": "North Eastern",
+        "listings": 0,
+        "share": "0%",
+        "source": "Data not currently available",
+        "date": "2026"
+    },
+
+    {
+        "id": 8,
+        "county": "Wajir",
+        "region": "North Eastern",
+        "listings": 0,
+        "share": "0%",
+        "source": "Data not currently available",
+        "date": "2026"
+    },
+
+    {
+        "id": 9,
+        "county": "Mandera",
+        "region": "North Eastern",
+        "listings": 0,
+        "share": "0%",
+        "source": "Data not currently available",
+        "date": "2026"
+    },
+
+    {
+        "id": 10,
+        "county": "Marsabit",
+        "region": "Eastern",
+        "listings": 0,
+        "share": "0%",
+        "source": "Data not currently available",
+        "date": "2026"
+    },
+
+    {
+        "id": 11,
+        "county": "Isiolo",
+        "region": "Eastern",
+        "listings": 0,
+        "share": "0%",
+        "source": "Data not currently available",
+        "date": "2026"
+    },
+
+    {
+        "id": 12,
+        "county": "Meru",
+        "region": "Eastern",
+        "listings": 0,
+        "share": "0%",
+        "source": "Data not currently available",
+        "date": "2026"
+    },
+
+    {
+        "id": 13,
+        "county": "Tharaka-Nithi",
+        "region": "Eastern",
+        "listings": 0,
+        "share": "0%",
+        "source": "Data not currently available",
+        "date": "2026"
+    },
+
+    {
+        "id": 14,
+        "county": "Embu",
+        "region": "Eastern",
+        "listings": 0,
+        "share": "0%",
+        "source": "Data not currently available",
+        "date": "2026"
+    },
+
+    {
+        "id": 15,
+        "county": "Kitui",
+        "region": "Eastern",
+        "listings": 0,
+        "share": "0%",
+        "source": "Data not currently available",
+        "date": "2026"
+    },
+
+    {
+        "id": 16,
+        "county": "Machakos",
+        "region": "Eastern",
+        "listings": 1651,
+        "share": "4.8%",
+        "source": "Inside Airbnb",
+        "date": "2026"
+    },
+
+    {
+        "id": 17,
+        "county": "Makueni",
+        "region": "Eastern",
+        "listings": 0,
+        "share": "0%",
+        "source": "Data not currently available",
+        "date": "2026"
+    },
+
+    {
+        "id": 18,
+        "county": "Nyandarua",
+        "region": "Central",
+        "listings": 0,
+        "share": "0%",
+        "source": "Data not currently available",
+        "date": "2026"
+    },
+
+    {
+        "id": 19,
+        "county": "Nyeri",
+        "region": "Central",
+        "listings": 0,
+        "share": "0%",
+        "source": "Data not currently available",
+        "date": "2026"
+    },
+
+    {
+        "id": 20,
+        "county": "Kirinyaga",
+        "region": "Central",
+        "listings": 0,
+        "share": "0%",
+        "source": "Data not currently available",
+        "date": "2026"
+    },
+
+    {
+        "id": 21,
+        "county": "Murang'a",
+        "region": "Central",
+        "listings": 0,
+        "share": "0%",
+        "source": "Data not currently available",
+        "date": "2026"
+    },
+
+    {
+        "id": 22,
+        "county": "Kiambu",
+        "region": "Central",
+        "listings": 2321,
+        "share": "6.7%",
+        "source": "Inside Airbnb",
+        "date": "2026"
+    },
+
+    {
+        "id": 23,
+        "county": "Turkana",
+        "region": "Rift Valley",
+        "listings": 0,
+        "share": "0%",
+        "source": "Data not currently available",
+        "date": "2026"
+    },
+
+    {
+        "id": 24,
+        "county": "West Pokot",
+        "region": "Rift Valley",
+        "listings": 0,
+        "share": "0%",
+        "source": "Data not currently available",
+        "date": "2026"
+    },
+
+    {
+        "id": 25,
+        "county": "Samburu",
+        "region": "Rift Valley",
+        "listings": 0,
+        "share": "0%",
+        "source": "Data not currently available",
+        "date": "2026"
+    },
+
+    {
+        "id": 26,
+        "county": "Trans Nzoia",
+        "region": "Rift Valley",
+        "listings": 0,
+        "share": "0%",
+        "source": "Data not currently available",
+        "date": "2026"
+    },
+
+    {
+        "id": 27,
+        "county": "Uasin Gishu",
+        "region": "Rift Valley",
+        "listings": 560,
+        "share": "1.6%",
+        "source": "Inside Airbnb",
+        "date": "2026"
+    },
+
+    {
+        "id": 28,
+        "county": "Elgeyo-Marakwet",
+        "region": "Rift Valley",
+        "listings": 0,
+        "share": "0%",
+        "source": "Data not currently available",
+        "date": "2026"
+    },
+
+    {
+        "id": 29,
+        "county": "Nandi",
+        "region": "Rift Valley",
+        "listings": 3,
+        "share": "0.1%",
+        "source": "Inside Airbnb",
+        "date": "2026"
+    },
+
+    {
+        "id": 30,
+        "county": "Baringo",
+        "region": "Rift Valley",
+        "listings": 0,
+        "share": "0%",
+        "source": "Data not currently available",
+        "date": "2026"
+    },
+
+    {
+        "id": 31,
+        "county": "Laikipia",
+        "region": "Rift Valley",
+        "listings": 0,
+        "share": "0%",
+        "source": "Data not currently available",
+        "date": "2026"
+    },
+
+    {
+        "id": 32,
+        "county": "Nakuru",
+        "region": "Rift Valley",
+        "listings": 1706,
+        "share": "4.9%",
+        "source": "Inside Airbnb",
+        "date": "2026"
+    },
+
+    {
+        "id": 33,
+        "county": "Narok",
+        "region": "Rift Valley",
+        "listings": 0,
+        "share": "0%",
+        "source": "Data not currently available",
+        "date": "2026"
+    },
+
+    {
+        "id": 34,
+        "county": "Kajiado",
+        "region": "Rift Valley",
+        "listings": 1069,
+        "share": "3.1%",
+        "source": "Inside Airbnb",
+        "date": "2026"
+    },
+
+    {
+        "id": 35,
+        "county": "Kericho",
+        "region": "Rift Valley",
+        "listings": 0,
+        "share": "0%",
+        "source": "Data not currently available",
+        "date": "2026"
+    },
+
+    {
+        "id": 36,
+        "county": "Bomet",
+        "region": "Rift Valley",
+        "listings": 0,
+        "share": "0%",
+        "source": "Data not currently available",
+        "date": "2026"
+    },
+
+    {
+        "id": 37,
+        "county": "Kakamega",
+        "region": "Western",
+        "listings": 0,
+        "share": "0%",
+        "source": "Data not currently available",
+        "date": "2026"
+    },
+
+    {
+        "id": 38,
+        "county": "Vihiga",
+        "region": "Western",
+        "listings": 0,
+        "share": "0%",
+        "source": "Data not currently available",
+        "date": "2026"
+    },
+
+    {
+        "id": 39,
+        "county": "Bungoma",
+        "region": "Western",
+        "listings": 0,
+        "share": "0%",
+        "source": "Data not currently available",
+        "date": "2026"
+    },
+
+    {
+        "id": 40,
+        "county": "Busia",
+        "region": "Western",
+        "listings": 0,
+        "share": "0%",
+        "source": "Data not currently available",
+        "date": "2026"
+    },
+
+    {
+        "id": 41,
+        "county": "Siaya",
+        "region": "Nyanza",
+        "listings": 0,
+        "share": "0%",
+        "source": "Data not currently available",
+        "date": "2026"
+    },
+
+    {
+        "id": 42,
+        "county": "Kisumu",
+        "region": "Nyanza",
+        "listings": 952,
+        "share": "2.8%",
+        "source": "Inside Airbnb",
+        "date": "2026"
+    },
+
+    {
+        "id": 43,
+        "county": "Homa Bay",
+        "region": "Nyanza",
+        "listings": 0,
+        "share": "0%",
+        "source": "Data not currently available",
+        "date": "2026"
+    },
+
+    {
+        "id": 44,
+        "county": "Migori",
+        "region": "Nyanza",
+        "listings": 0,
+        "share": "0%",
+        "source": "Data not currently available",
+        "date": "2026"
+    },
+
+    {
+        "id": 45,
+        "county": "Kisii",
+        "region": "Nyanza",
+        "listings": 0,
+        "share": "0%",
+        "source": "Data not currently available",
+        "date": "2026"
+    },
+
+    {
+        "id": 46,
+        "county": "Nyamira",
+        "region": "Nyanza",
+        "listings": 0,
+        "share": "0%",
+        "source": "Data not currently available",
+        "date": "2026"
+    },
+
+    {
+        "id": 47,
+        "county": "Nairobi",
+        "region": "Nairobi",
+        "listings": 15271,
+        "share": "44.2%",
+        "source": "Inside Airbnb",
+        "date": "2026"
+    }
+]

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Explore short-term rental listings across Kenya's 47 counties.">
+  <title>KenyaStays | Short-Term Rentals Across Kenya</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="site-header"><div class="container nav-container">
+    <a href="#home" class="logo"><span class="logo-icon"><i class="fa-solid fa-house"></i></span>Kenya<span class="logo-highlight">Stays</span></a>
+    <nav class="navigation" id="navigation"><a href="#home">Home</a><a href="#counties">Counties</a><a href="#booking">Request a Stay</a><a href="/admin">Admin</a><a href="#popular">Popular Areas</a><a href="#about">About</a></nav>
+    <button class="mobile-menu-btn" id="mobileMenuBtn" type="button" aria-label="Open menu" aria-expanded="false"><i class="fa-solid fa-bars"></i></button>
+  </div></header>
+
+  <main>
+    <section class="hero" id="home"><div class="container hero-content"><div class="hero-text">
+      <span class="hero-badge"><i class="fa-solid fa-location-dot"></i> EXPLORE KENYA</span>
+      <h1>Find Your Perfect <span>Stay in Kenya</span></h1>
+      <p>Explore short-term rentals, holiday homes and Airbnb accommodation across Kenya's 47 counties.</p>
+      <div class="hero-search"><div class="search-box"><i class="fa-solid fa-magnifying-glass"></i><input type="text" id="searchInput" placeholder="Search Nairobi, Mombasa, Nakuru..." aria-label="Search counties"></div><button class="search-button" id="heroSearchButton" type="button">Search</button></div>
+      <div class="hero-features"><div><i class="fa-solid fa-map"></i> 47 Counties</div><div><i class="fa-solid fa-house"></i> Short-Term Rentals</div><div><i class="fa-solid fa-compass"></i> Explore Kenya</div></div>
+    </div></div></section>
+
+    <section class="statistics"><div class="container stats-grid">
+      <div class="stat-card"><div class="stat-icon"><i class="fa-solid fa-map-location-dot"></i></div><div><strong>47</strong><span>Kenyan Counties</span></div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fa-solid fa-house"></i></div><div><strong id="totalListings">34K+</strong><span>Recorded Listings</span></div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fa-solid fa-city"></i></div><div><strong>100+</strong><span>Destinations</span></div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fa-solid fa-earth-africa"></i></div><div><strong>Kenya</strong><span>Nationwide Directory</span></div></div>
+    </div></section>
+
+    <section class="booking-section" id="booking"><div class="container booking-grid">
+      <div class="booking-intro"><span class="section-label">PLAN YOUR VISIT</span><h2>Request a Stay</h2><p>Tell us what you are looking for and we will record your accommodation request.</p></div>
+      <form class="booking-form" id="bookingForm">
+        <div class="form-field"><label for="bookingLocation">Location</label><input id="bookingLocation" name="location" type="text" placeholder="Nairobi" required></div>
+        <div class="form-row"><div class="form-field"><label for="checkIn">Check-in</label><input id="checkIn" name="checkIn" type="date" required></div><div class="form-field"><label for="checkOut">Check-out</label><input id="checkOut" name="checkOut" type="date" required></div></div>
+        <div class="form-row"><div class="form-field"><label for="guests">Guests</label><input id="guests" name="guests" type="number" min="1" value="2" required></div><div class="form-field"><label for="accommodation">Accommodation</label><select id="accommodation" name="accommodation" required><option value="Apartment">Apartment</option><option value="House">House</option><option value="Villa">Villa</option><option value="Room">Room</option></select></div></div>
+        <div class="form-field"><label for="specialRequest">Special request</label><textarea id="specialRequest" name="specialRequest" rows="4" placeholder="Tell us anything we should know"></textarea></div>
+        <button class="booking-submit" id="bookingSubmit" type="submit">Send Request <i class="fa-solid fa-arrow-right"></i></button>
+        <p class="booking-message" id="bookingMessage" aria-live="polite"></p>
+        <div class="property-recommendations" id="propertyRecommendations" aria-live="polite"></div>
+      </form>
+    </div></section>
+
+    <section class="owner-dashboard-section" id="owner-dashboard"><div class="container">
+      <div class="section-heading"><div><span class="section-label">OWNER PORTAL</span><h2>Owner Dashboard</h2><p>Review incoming requests and respond to stays assigned to your properties.</p></div><button class="dashboard-refresh" id="ownerDashboardRefresh" type="button"><i class="fa-solid fa-rotate"></i> Refresh</button></div>
+      <div class="owner-summary" id="ownerSummary"></div>
+      <div class="owner-bookings" id="ownerBookings"><p class="recommendation-empty">Loading owner bookings...</p></div>
+      <p class="booking-message" id="ownerDashboardMessage" aria-live="polite"></p>
+    </div></section>
+
+    <section class="admin-dashboard-section" id="admin"><div class="container">
+      <div class="section-heading"><div><span class="section-label">ADMINISTRATION</span><h2>Admin Dashboard</h2><p>Monitor platform activity, bookings, payments, and customer-care work.</p></div><button class="dashboard-refresh" id="adminDashboardRefresh" type="button"><i class="fa-solid fa-rotate"></i> Refresh</button></div>
+      <div class="admin-summary" id="adminSummary"><p class="recommendation-empty">Loading admin metrics...</p></div>
+      <div class="admin-columns"><div><h3>Recent bookings</h3><div class="admin-bookings" id="adminBookings"></div></div><div><h3>Customer-care tickets</h3><div class="admin-tickets" id="adminTickets"></div></div></div>
+      <p class="booking-message" id="adminDashboardMessage" aria-live="polite"></p>
+    </div></section>
+
+    <section class="counties-section" id="counties"><div class="container">
+      <div class="section-heading"><div><span class="section-label">DISCOVER KENYA</span><h2>Explore Accommodation by County</h2><p>Browse short-term rental information across Kenya's counties and discover your next destination.</p></div><div class="sort-area"><label for="sortSelect">Sort by:</label><select id="sortSelect"><option value="listings">Most Listings</option><option value="name">County Name</option></select></div></div>
+      <p id="resultsMessage" aria-live="polite"></p><div id="countyGrid" class="county-grid"></div>
+    </div></section>
+
+    <section class="popular-section" id="popular"><div class="container"><div class="section-heading centered"><span class="section-label">POPULAR DESTINATIONS</span><h2>Explore Kenya's Top Destinations</h2><p>Discover some of Kenya's most popular travel and accommodation destinations.</p></div><div class="destination-grid">
+      <article class="destination-card"><img src="images/nairobi.jpg" alt="Nairobi skyline"><div class="destination-overlay"><span>Nairobi County</span><h3>Nairobi</h3><a href="https://www.airbnb.com/s/Nairobi--Kenya/homes" target="_blank" rel="noopener noreferrer">Explore Nairobi <i class="fa-solid fa-arrow-right"></i></a></div></article>
+      <article class="destination-card"><img src="images/mombasa.jpg" alt="Kenyan coast landscape"><div class="destination-overlay"><span>Mombasa County</span><h3>Mombasa</h3><a href="https://www.airbnb.com/s/Mombasa--Kenya/homes" target="_blank" rel="noopener noreferrer">Explore Mombasa <i class="fa-solid fa-arrow-right"></i></a></div></article>
+      <article class="destination-card"><img src="images/diani.jpg" alt="Diani Beach coastline"><div class="destination-overlay"><span>Kwale County</span><h3>Diani Beach</h3><a href="https://www.airbnb.com/s/Diani--Kenya/homes" target="_blank" rel="noopener noreferrer">Explore Diani <i class="fa-solid fa-arrow-right"></i></a></div></article>
+    </div></div></section>
+
+    <section class="about-section" id="about"><div class="container about-grid"><div class="about-image"><img src="images/kenya-hero.jpg" alt="Kenyan landscape"></div><div class="about-content"><span class="section-label">ABOUT THE DIRECTORY</span><h2>Your Guide to Short-Term Accommodation in Kenya</h2><p>KenyaStays makes it easier to discover short-term rental and holiday accommodation opportunities across Kenya.</p><p>Browse counties, compare available listing information and explore popular destinations throughout the country.</p><div class="about-points"><div><i class="fa-solid fa-check"></i> County-by-county directory</div><div><i class="fa-solid fa-check"></i> Search and filtering</div><div><i class="fa-solid fa-check"></i> Destination discovery</div><div><i class="fa-solid fa-check"></i> Mobile-friendly design</div></div></div></div></section>
+    <section class="cta-section"><div class="container cta-content"><div><span class="section-label">EXPLORE KENYA</span><h2>Your Next Kenyan Adventure Starts Here</h2><p>Search our county directory and discover accommodation throughout Kenya.</p></div><a href="#counties" class="cta-button">Browse Counties <i class="fa-solid fa-arrow-right"></i></a></div></section>
+
+    <section class="customer-care-section" id="customer-care"><div class="container customer-care-grid">
+      <div class="customer-care-intro"><span class="section-label">CUSTOMER CARE</span><h2>How can we help?</h2><p>Send our team a message about your stay, and we will follow up with you.</p></div>
+      <form class="booking-form" id="customerCareForm">
+        <div class="form-row"><div class="form-field"><label for="customerName">Name</label><input id="customerName" name="name" type="text" autocomplete="name" required></div><div class="form-field"><label for="customerEmail">Email</label><input id="customerEmail" name="email" type="email" autocomplete="email" required></div></div>
+        <div class="form-field"><label for="customerPhone">Phone</label><input id="customerPhone" name="phone" type="tel" autocomplete="tel" required></div>
+        <div class="form-field"><label for="customerSubject">Subject</label><input id="customerSubject" name="subject" type="text" placeholder="Accommodation in Nairobi" required></div>
+        <div class="form-field"><label for="customerMessage">Message</label><textarea id="customerMessage" name="message" rows="5" placeholder="Tell us how we can help" required></textarea></div>
+        <button class="booking-submit" id="customerCareSubmit" type="submit">Send Message <i class="fa-solid fa-paper-plane"></i></button>
+        <p class="booking-message" id="customerCareMessage" aria-live="polite"></p>
+      </form>
+    </div></section>
+  </main>
+
+  <footer class="footer"><div class="container footer-grid"><div><a href="#home" class="logo footer-logo"><span class="logo-icon"><i class="fa-solid fa-house"></i></span>Kenya<span class="logo-highlight">Stays</span></a><p>A county-by-county directory for discovering short-term accommodation across Kenya.</p></div><div><h4>Explore</h4><a href="#counties">Counties</a><a href="#popular">Destinations</a><a href="#about">About</a></div><div><h4>Information</h4><a href="#about">About Us</a><a href="#counties">Directory</a></div><div><h4>Follow</h4><div class="social-links"><a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook"></i></a><a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a><a href="#" aria-label="X"><i class="fa-brands fa-x-twitter"></i></a></div></div></div><div class="container footer-bottom"><p>&copy; <span id="currentYear"></span> KenyaStays. All rights reserved.</p><p>Data should be independently verified before making decisions.</p></div></footer>
+  <script src="script.js"></script>
+</body>
+</html>

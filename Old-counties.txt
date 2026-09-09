@@ -1,0 +1,62 @@
+  const counties= [
+
+    {
+      name: "Nairobi",
+      listings: 15271,
+      share: "44.2%"
+    },
+
+    {
+      name: "Mombasa",
+      listings: 3649,
+      share: "10.6%"
+    },
+
+    {
+      name: "Kilifi",
+      listings: 2404,
+      share: "7.0%"
+    },
+
+    {
+      name: "Kiambu",
+      listings: 2321,
+      share: "6.7%"
+    },
+
+    {
+      name: "Nakuru",
+      listings: 1706,
+      share: "4.9%"
+    },
+
+    {
+      name: "Machakos",
+      listings: 1651,
+      share: "4.8%"
+    },
+
+    {
+      name: "Kwale",
+      listings: 1590,
+      share: "4.6%"
+    },
+
+    {
+      name: "Kajiado",
+      listings: 1069,
+      share: "3.1%"
+    },
+
+    {
+      name: "Kisumu",
+      listings: 952,
+      share: "2.8%"
+    },
+
+    {
+      name: "Uasin Gishu",
+      listings: 560,
+      share: "1.6%"
+    }
+  ];
