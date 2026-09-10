@@ -450,7 +450,7 @@ app.post("/api/bookings", (req, res) => {
         check_out: checkOut,
         guests: Number(guests),
         accommodation,
-        amount: req.body.amount || null,
+        amount: null,
         status: "pending",
         payment_status: "unpaid",
         special_request: String(specialRequest).trim(),
@@ -478,7 +478,7 @@ app.post("/api/bookings", (req, res) => {
     const recommendedProperty = propertyMatches.recommendations[0];
     booking.property_id = req.body.property_id || recommendedProperty?.property_id || null;
     booking.owner_id = req.body.owner_id || recommendedProperty?.owner_id || null;
-    booking.amount = req.body.amount || recommendedProperty?.total_amount || null;
+    booking.amount = recommendedProperty?.total_amount || null;
 
     bookings.push(booking);
 
@@ -723,7 +723,59 @@ app.patch("/api/notifications/:notificationId/read", (req, res) => {
     });
 
 });   */
-// Simulated M-Pesa STK Push initiation endpoint
+// Mark payment as successful and update booking status
+function markPaymentSuccessful(paymentRequest) {
+    const now = new Date();
+
+    if (paymentRequest.status === PAYMENT_STATUSES.SUCCESS) {
+        return {
+            alreadyProcessed: true
+        };
+    }
+
+    paymentRequest.status = PAYMENT_STATUSES.SUCCESS;
+    paymentRequest.updated_at = now;
+    paymentRequest.paid_at = now;
+
+    const booking = bookings.find(
+        booking => booking.booking_id === paymentRequest.booking_id
+    );
+
+    if (!booking) {
+        return {
+            alreadyProcessed: false,
+            booking: null
+        };
+    }
+
+    booking.payment_status = "paid";
+    booking.status = "confirmed";
+    booking.updated_at = now;
+
+    createNotification({
+        userId: booking.customer_id,
+        title: "Booking confirmed",
+        message: "Your payment was received and your reservation is confirmed.",
+        type: "booking_confirmed",
+        bookingId: booking.booking_id
+    });
+
+    createNotification({
+        userId: booking.owner_id,
+        title: "Payment received",
+        message: `Payment was received for booking #${booking.booking_id}.`,
+        type: "payment_received",
+        bookingId: booking.booking_id
+    });
+
+    return {
+        alreadyProcessed: false,
+        booking
+    };
+}
+
+
+// Payment initiation endpoint
 app.post("/api/payments/:paymentRequestId/stk-push", (req, res) => {
     const paymentRequestId = Number(req.params.paymentRequestId);
 
