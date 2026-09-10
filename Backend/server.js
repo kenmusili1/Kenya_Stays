@@ -93,6 +93,17 @@ const properties = [
     }
 ];
 
+//Payment statuses
+const PAYMENT_STATUSES = Object.freeze({
+    PENDING: "PENDING",
+    STK_INITIATED: "STK_INITIATED",
+    PROCESSING: "PROCESSING",
+    SUCCESS: "SUCCESS",
+    FAILED: "FAILED",
+    CANCELLED: "CANCELLED",
+    REFUNDED: "REFUNDED"
+});
+
 function calculateDistanceInKilometres(first, second) {
 
     const earthRadius = 6371;
@@ -443,7 +454,7 @@ app.post("/api/bookings", (req, res) => {
         check_out: checkOut,
         guests: Number(guests),
         accommodation,
-        amount: req.body.amount || null,
+        amount: null,
         status: "pending",
         payment_status: "unpaid",
         special_request: String(specialRequest).trim(),
@@ -471,7 +482,7 @@ app.post("/api/bookings", (req, res) => {
     const recommendedProperty = propertyMatches.recommendations[0];
     booking.property_id = req.body.property_id || recommendedProperty?.property_id || null;
     booking.owner_id = req.body.owner_id || recommendedProperty?.owner_id || null;
-    booking.amount = req.body.amount || recommendedProperty?.total_amount || null;
+    booking.amount = recommendedProperty?.total_amount || null;
 
     bookings.push(booking);
 
@@ -570,12 +581,30 @@ app.patch("/api/owners/:ownerId/bookings/:bookingId", (req, res) => {
             bookingId: booking.booking_id
         });
         paymentRequests.push({
-            payment_request_id: paymentRequests.length + 1,
-            booking_id: booking.booking_id,
-            customer_id: booking.customer_id,
-            amount: booking.amount,
-            status: "PENDING",
-            created_at: now
+                payment_request_id: paymentRequests.length + 1,
+
+                booking_id: booking.booking_id,
+                customer_id: booking.customer_id,
+
+                amount: Number(booking.amount),
+                currency: "KES",
+
+                provider: null,
+                method: null,
+
+                internal_reference: `KS-PAY-${Date.now()}-${booking.booking_id}`,
+
+                payhero_reference: null,
+                checkout_request_id: null,
+
+                phone_number: null,
+
+                status: PAYMENT_STATUSES.PENDING,
+
+                callback_data: null,
+
+                created_at: now,
+                updated_at: now
         });
 
     }
@@ -627,7 +656,7 @@ app.patch("/api/notifications/:notificationId/read", (req, res) => {
 
 });
 
-app.post("/api/payments/:paymentRequestId/confirm", (req, res) => {
+/*app.post("/api/payments/:paymentRequestId/confirm", (req, res) => {
 
     const paymentRequest = paymentRequests.find(item => item.payment_request_id === Number(req.params.paymentRequestId));
     const supportedMethods = ["mpesa", "card", "bank_transfer"];
@@ -697,6 +726,107 @@ app.post("/api/payments/:paymentRequestId/confirm", (req, res) => {
         booking
     });
 
+});   */
+// Mark payment as successful and update booking status
+function markPaymentSuccessful(paymentRequest) {
+    const now = new Date();
+
+    if (paymentRequest.status === PAYMENT_STATUSES.SUCCESS) {
+        return {
+            alreadyProcessed: true
+        };
+    }
+
+    paymentRequest.status = PAYMENT_STATUSES.SUCCESS;
+    paymentRequest.updated_at = now;
+    paymentRequest.paid_at = now;
+
+    const booking = bookings.find(
+        booking => booking.booking_id === paymentRequest.booking_id
+    );
+
+    if (!booking) {
+        return {
+            alreadyProcessed: false,
+            booking: null
+        };
+    }
+
+    booking.payment_status = "paid";
+    booking.status = "confirmed";
+    booking.updated_at = now;
+
+    createNotification({
+        userId: booking.customer_id,
+        title: "Booking confirmed",
+        message: "Your payment was received and your reservation is confirmed.",
+        type: "booking_confirmed",
+        bookingId: booking.booking_id
+    });
+
+    createNotification({
+        userId: booking.owner_id,
+        title: "Payment received",
+        message: `Payment was received for booking #${booking.booking_id}.`,
+        type: "payment_received",
+        bookingId: booking.booking_id
+    });
+
+    return {
+        alreadyProcessed: false,
+        booking
+    };
+}
+
+
+// Payment initiation endpoint
+app.post("/api/payments/:paymentRequestId/stk-push", (req, res) => {
+    const paymentRequestId = Number(req.params.paymentRequestId);
+
+    const paymentRequest = paymentRequests.find(
+        item => item.payment_request_id === paymentRequestId
+    );
+
+    if (!paymentRequest) {
+        return res.status(404).json({
+            success: false,
+            message: "Payment request not found."
+        });
+    }
+
+    if (paymentRequest.status !== PAYMENT_STATUSES.PENDING) {
+        return res.status(409).json({
+            success: false,
+            message: `Payment cannot be initiated from ${paymentRequest.status} status.`
+        });
+    }
+
+    const phoneNumber = String(req.body.phoneNumber || "").trim();
+
+    if (!phoneNumber) {
+        return res.status(400).json({
+            success: false,
+            message: "M-Pesa phone number is required."
+        });
+    }
+
+    paymentRequest.method = "MPESA";
+    paymentRequest.provider = "PAYHERO";
+    paymentRequest.phone_number = phoneNumber;
+    paymentRequest.status = PAYMENT_STATUSES.STK_INITIATED;
+    paymentRequest.updated_at = new Date();
+
+    return res.status(202).json({
+        success: true,
+        message: "Payment initiation accepted.",
+        payment: {
+            payment_request_id: paymentRequest.payment_request_id,
+            internal_reference: paymentRequest.internal_reference,
+            amount: paymentRequest.amount,
+            currency: paymentRequest.currency,
+            status: paymentRequest.status
+        }
+    });
 });
 
 app.patch("/api/admin/payments/:paymentRequestId/refund", (req, res) => {

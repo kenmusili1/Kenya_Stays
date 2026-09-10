@@ -159,52 +159,30 @@ function getStoredAuthState() {
 }
 
 function getCurrentUserRole() {
-    const queryParams = new URLSearchParams(window.location.search);
-    const queryRole = queryParams.get("role");
-    const selectorRole = roleSelector ? roleSelector.value : "";
-    const authState = getStoredAuthState();
-    const storedRole = authState.role || localStorage.getItem("kenyaStaysRole") || sessionStorage.getItem("kenyaStaysRole");
-    const role = (selectorRole || queryRole || storedRole || "CUSTOMER").toUpperCase();
-    const validRoles = ["CUSTOMER", "OWNER", "ADMIN", "CUSTOMER CARE"];
-    const normalizedRole = validRoles.includes(role) ? role : "CUSTOMER";
-
-    if (roleSelector && roleSelector.value !== normalizedRole) {
-        roleSelector.value = normalizedRole;
-    }
-
-    if (queryRole || selectorRole || authState.role) {
-        localStorage.setItem("kenyaStaysRole", normalizedRole);
-    }
-
-    return normalizedRole;
+    return "OWNER";
 }
 
 function syncRoleSelector() {
-    if (!roleSelector) {
-        return;
+    if (roleSelector) {
+        roleSelector.value = "OWNER";
     }
-
-    roleSelector.value = getCurrentUserRole();
 }
 
 function updateAuthButtons() {
-    const isLoggedIn = Boolean(getStoredAuthState().isLoggedIn);
-
     if (loginButton) {
-        loginButton.hidden = isLoggedIn;
+        loginButton.hidden = true;
     }
 
     if (logoutButton) {
-        logoutButton.hidden = !isLoggedIn;
+        logoutButton.hidden = true;
     }
 }
 
 function renderDashboardAccess() {
-    const role = getCurrentUserRole();
     const ownerDashboardSection = document.getElementById("owner-dashboard");
     const adminDashboardSection = document.getElementById("admin");
-    const shouldShowOwnerDashboard = role === "OWNER";
-    const shouldShowAdminDashboard = role === "ADMIN" || role === "OWNER";
+    const shouldShowOwnerDashboard = true;
+    const shouldShowAdminDashboard = true;
 
     if (ownerDashboardSection) {
         ownerDashboardSection.hidden = !shouldShowOwnerDashboard;
