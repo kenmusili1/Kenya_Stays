@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
-const apiApp = require("../backend/server.js");
+const apiApp = require("./server.js");
 
 const app = express();
 const port = process.env.PORT || 3000;

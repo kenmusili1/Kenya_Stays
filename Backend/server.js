@@ -1,6 +1,15 @@
+const {
+    payHeroRequest,
+    initiateMpesaStkPush
+} = require("./services/payhero");
+
+
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
+
+
+validatePayHeroConfiguration();
 
 const app = express();
 
@@ -181,6 +190,186 @@ function isAdmin(request) {
     const body = request.body || {};
     return Number(request.query.admin_id || body.admin_id || request.params.adminId) === 3;
 
+}
+// Pay Hero configuration check
+function validatePayHeroConfiguration() {
+    const required = [
+        "PAYHERO_API_USERNAME",
+        "PAYHERO_API_PASSWORD",
+        "PAYHERO_CALLBACK_URL"
+    ];
+
+    const missing = required.filter(
+        name => !process.env[name]
+    );
+
+    if (missing.length > 0) {
+        console.warn(
+            `Missing Pay Hero configuration: ${missing.join(", ")}`
+        );
+
+        return false;
+    }
+
+    console.log(
+        "Pay Hero configuration loaded."
+    );
+
+    return true;
+}
+
+// Phone number normalization for Kenyan M-Pesa format
+function normalizeKenyanPhoneNumber(
+    phoneNumber
+) {
+    const cleaned =
+        String(phoneNumber || "")
+            .trim()
+            .replace(/\s+/g, "")
+            .replace(/-/g, "");
+
+    if (!cleaned) {
+        return null;
+    }
+
+    if (/^07\d{8}$/.test(cleaned)) {
+        return `254${cleaned.slice(1)}`;
+    }
+
+    if (/^7\d{8}$/.test(cleaned)) {
+        return `254${cleaned}`;
+    }
+
+    if (/^2547\d{8}$/.test(cleaned)) {
+        return cleaned;
+    }
+
+    if (/^\+2547\d{8}$/.test(cleaned)) {
+        return cleaned.slice(1);
+    }
+
+    return null;
+}
+
+// Find a payment request by its internal or Pay Hero reference
+function findPaymentRequestByReference(reference) {
+    if (!reference) {
+        return null;
+    }
+
+    return paymentRequests.find(
+        paymentRequest =>
+            paymentRequest.payhero_reference === reference ||
+            paymentRequest.internal_reference === reference
+    );
+}
+
+
+// Normalize Pay Hero callback data to a consistent format
+function normalizePayHeroCallback(callbackData) {
+    const response = callbackData?.response || callbackData;
+
+    if (!response || typeof response !== "object") {
+        return null;
+    }
+
+    return {
+        amount: Number(response.Amount),
+        checkoutRequestId:
+            response.CheckoutRequestID ||
+            response.checkout_request_id ||
+            null,
+
+        externalReference:
+            response.ExternalReference ||
+            response.external_reference ||
+            null,
+
+        merchantRequestId:
+            response.MerchantRequestID ||
+            response.merchant_request_id ||
+            null,
+
+        resultCode:
+            response.ResultCode ??
+            response.result_code ??
+            null,
+
+        resultDescription:
+            response.ResultDesc ||
+            response.result_desc ||
+            null,
+
+        status:
+            response.Status ||
+            response.status ||
+            null,
+
+        transactionId:
+            response.TransactionID ||
+            response.transaction_id ||
+            null
+    };
+}
+
+// Validate that a Pay Hero payment was successful and matches the expected payment request
+function validateSuccessfulPayHeroPayment(
+    paymentRequest,
+    normalizedCallback
+) {
+    if (!paymentRequest) {
+        return {
+            valid: false,
+            message: "Payment request not found."
+        };
+    }
+
+    if (!normalizedCallback) {
+        return {
+            valid: false,
+            message: "Invalid Pay Hero callback."
+        };
+    }
+
+    if (
+        normalizedCallback.externalReference &&
+        normalizedCallback.externalReference !==
+            paymentRequest.internal_reference
+    ) {
+        return {
+            valid: false,
+            message: "Payment reference does not match."
+        };
+    }
+
+    if (
+        Number.isFinite(normalizedCallback.amount) &&
+        normalizedCallback.amount !== Number(paymentRequest.amount)
+    ) {
+        return {
+            valid: false,
+            message: "Payment amount does not match."
+        };
+    }
+
+    const resultCode = Number(normalizedCallback.resultCode);
+
+    const successful =
+        resultCode === 0 ||
+        String(normalizedCallback.status).toLowerCase() === "success";
+
+    if (!successful) {
+        return {
+            valid: false,
+            message:
+                normalizedCallback.resultDescription ||
+                "Pay Hero reported an unsuccessful payment."
+        };
+    }
+
+    return {
+        valid: true
+    };
 }
 
 // Middleware
@@ -774,55 +963,330 @@ function markPaymentSuccessful(paymentRequest) {
     };
 }
 
+// Process Pay Hero callback and update payment request and booking status
+function processPayHeroCallback(callbackData) {
+    const normalized = normalizePayHeroCallback(callbackData);
 
-// Payment initiation endpoint
-app.post("/api/payments/:paymentRequestId/stk-push", (req, res) => {
-    const paymentRequestId = Number(req.params.paymentRequestId);
+    if (!normalized) {
+        return {
+            success: false,
+            processed: false,
+            message: "Invalid Pay Hero callback."
+        };
+    }
 
-    const paymentRequest = paymentRequests.find(
-        item => item.payment_request_id === paymentRequestId
-    );
+    const paymentRequest =
+        findPaymentRequestByReference(
+            normalized.externalReference
+        );
 
     if (!paymentRequest) {
-        return res.status(404).json({
+        console.error(
+            "Pay Hero callback could not be matched:",
+            normalized.externalReference
+        );
+
+        return {
             success: false,
-            message: "Payment request not found."
-        });
+            processed: false,
+            message: "Payment request could not be matched."
+        };
     }
 
-    if (paymentRequest.status !== PAYMENT_STATUSES.PENDING) {
-        return res.status(409).json({
-            success: false,
-            message: `Payment cannot be initiated from ${paymentRequest.status} status.`
-        });
-    }
-
-    const phoneNumber = String(req.body.phoneNumber || "").trim();
-
-    if (!phoneNumber) {
-        return res.status(400).json({
-            success: false,
-            message: "M-Pesa phone number is required."
-        });
-    }
-
-    paymentRequest.method = "MPESA";
-    paymentRequest.provider = "PAYHERO";
-    paymentRequest.phone_number = phoneNumber;
-    paymentRequest.status = PAYMENT_STATUSES.STK_INITIATED;
+    paymentRequest.callback_data = callbackData;
     paymentRequest.updated_at = new Date();
 
-    return res.status(202).json({
-        success: true,
-        message: "Payment initiation accepted.",
-        payment: {
-            payment_request_id: paymentRequest.payment_request_id,
-            internal_reference: paymentRequest.internal_reference,
-            amount: paymentRequest.amount,
-            currency: paymentRequest.currency,
-            status: paymentRequest.status
+    paymentRequest.payhero_transaction_id =
+        normalized.transactionId;
+
+    paymentRequest.checkout_request_id =
+        normalized.checkoutRequestId ||
+        paymentRequest.checkout_request_id;
+
+    paymentRequest.payhero_status =
+        normalized.status || null;
+
+    paymentRequest.result_code =
+        normalized.resultCode;
+
+    paymentRequest.result_description =
+        normalized.resultDescription;
+
+    const validation =
+        validateSuccessfulPayHeroPayment(
+            paymentRequest,
+            normalized
+        );
+
+    if (!validation.valid) {
+        paymentRequest.status =
+            PAYMENT_STATUSES.FAILED;
+
+        paymentRequest.updated_at = new Date();
+
+        return {
+            success: false,
+            processed: false,
+            message: validation.message
+        };
+    }
+
+    const result =
+        markPaymentSuccessful(paymentRequest);
+
+    return {
+        success: result.success,
+        processed: !result.alreadyProcessed,
+        alreadyProcessed:
+            result.alreadyProcessed || false,
+        message: result.message
+    };
+}
+
+// Payment initiation endpoint
+app.post(
+    "/api/payments/:paymentRequestId/stk-push",
+    async (req, res) => {
+        try {
+            const paymentRequestId =
+                Number(
+                    req.params.paymentRequestId
+                );
+
+            const paymentRequest =
+                paymentRequests.find(
+                    payment =>
+                        payment.payment_request_id ===
+                        paymentRequestId
+                );
+
+            if (!paymentRequest) {
+                return res.status(404).json({
+                    success: false,
+                    message:
+                        "Payment request not found."
+                });
+            }
+
+
+            if (
+                paymentRequest.status !==
+                PAYMENT_STATUSES.PENDING
+            ) {
+                return res.status(409).json({
+                    success: false,
+                    message:
+                        `Payment cannot be initiated from ${paymentRequest.status} status.`
+                });
+            }
+
+
+            const phoneNumber =
+                normalizeKenyanPhoneNumber(
+                    req.body.phoneNumber
+                );
+
+            if (!phoneNumber) {
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "Enter a valid Kenyan M-Pesa phone number."
+                });
+            }
+
+
+            if (
+                !paymentRequest.amount ||
+                Number(paymentRequest.amount) <= 0
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "Invalid payment amount."
+                });
+            }
+
+
+            paymentRequest.provider =
+                "PAYHERO";
+
+            paymentRequest.method =
+                "MPESA";
+
+            paymentRequest.phone_number =
+                phoneNumber;
+
+            paymentRequest.status =
+                PAYMENT_STATUSES.PROCESSING;
+
+            paymentRequest.updated_at =
+                new Date();
+
+
+            const customer =
+                accounts.find(
+                    account =>
+                        account.id ===
+                        paymentRequest.customer_id
+                );
+
+
+            const customerName =
+                customer?.name ||
+                customer?.full_name ||
+                undefined;
+
+
+            const payHeroResponse =
+                await initiateMpesaStkPush({
+                    amount:
+                        paymentRequest.amount,
+
+                    phoneNumber,
+
+                    reference:
+                        paymentRequest.internal_reference,
+
+                    customerName,
+
+                    callbackUrl:
+                        process.env
+                            .PAYHERO_CALLBACK_URL
+                });
+
+
+            /*
+             * Pay Hero accepted the STK request.
+             *
+             * This is NOT payment success.
+             */
+
+            if (
+                !payHeroResponse ||
+                payHeroResponse.success !== true
+            ) {
+                throw new Error(
+                    "Pay Hero did not accept the STK request."
+                );
+            }
+
+
+            paymentRequest.status =
+                PAYMENT_STATUSES.STK_INITIATED;
+
+
+            paymentRequest.payhero_reference =
+                payHeroResponse.reference ||
+                null;
+
+
+            paymentRequest.checkout_request_id =
+                payHeroResponse.CheckoutRequestID ||
+                null;
+
+
+            paymentRequest.payhero_status =
+                payHeroResponse.status ||
+                null;
+
+
+            paymentRequest.payhero_response =
+                payHeroResponse;
+
+
+            paymentRequest.updated_at =
+                new Date();
+
+
+            return res.status(202).json({
+                success: true,
+
+                message:
+                    "M-Pesa payment request initiated. Check your phone and enter your M-Pesa PIN.",
+
+                payment: {
+                    payment_request_id:
+                        paymentRequest.payment_request_id,
+
+                    amount:
+                        paymentRequest.amount,
+
+                    currency:
+                        paymentRequest.currency,
+
+                    status:
+                        paymentRequest.status,
+
+                    reference:
+                        paymentRequest.internal_reference,
+
+                    checkout_request_id:
+                        paymentRequest.checkout_request_id
+                }
+            });
+
+        } catch (error) {
+            console.error(
+                "Pay Hero STK Push error:",
+                error
+            );
+
+
+            const paymentRequest =
+                paymentRequests.find(
+                    payment =>
+                        payment.payment_request_id ===
+                        Number(
+                            req.params.paymentRequestId
+                        )
+                );
+
+
+            if (paymentRequest) {
+                paymentRequest.status =
+                    PAYMENT_STATUSES.FAILED;
+
+                paymentRequest.failure_reason =
+                    error.message;
+
+                paymentRequest.updated_at =
+                    new Date();
+            }
+
+
+            return res.status(502).json({
+                success: false,
+
+                message:
+                    "Unable to initiate the M-Pesa payment."
+            });
         }
-    });
+    }
+);
+
+// Callback endpoint
+app.post("/api/payments/payhero/callback", async (req, res) => {
+    try {
+        console.log("========== PAY HERO CALLBACK ==========");
+        console.log(JSON.stringify(req.body, null, 2));
+        console.log("========================================");
+
+        const result =
+            processPayHeroCallback(req.body);
+
+        return res.status(200).json(result);
+
+    } catch (error) {
+        console.error(
+            "Pay Hero callback processing error:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            message: "Callback processing failed."
+        });
+    }
 });
 
 app.patch("/api/admin/payments/:paymentRequestId/refund", (req, res) => {
