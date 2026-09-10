@@ -168,7 +168,11 @@ function createNotification({ userId, title, message, type, bookingId = null }) 
 function isAdmin(request) {
 
     const body = request.body || {};
-    return Number(request.query.admin_id || body.admin_id || request.params.adminId) === 3;
+    const query = request.query || {};
+    const adminId = Number(query.admin_id ?? body.admin_id ?? request.params.adminId ?? 0);
+    const role = String(query.role || body.role || "").toUpperCase();
+
+    return adminId === 3 || role === "ADMIN" || role === "OWNER";
 
 }
 

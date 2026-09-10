@@ -84,6 +84,63 @@ const adminDashboardMessage =
 const adminDashboardRefresh =
     document.getElementById("adminDashboardRefresh");
 
+const roleSelector =
+    document.getElementById("roleSelector");
+
+const loginButton =
+    document.getElementById("loginButton");
+
+const logoutButton =
+    document.getElementById("logoutButton");
+
+const loginModalBackdrop =
+    document.getElementById("loginModalBackdrop");
+
+const closeLoginModalButton =
+    document.getElementById("closeLoginModal");
+
+const loginForm =
+    document.getElementById("loginForm");
+
+const loginRoleSelect =
+    document.getElementById("loginRole");
+
+const loginEmailInput =
+    document.getElementById("loginEmail");
+
+const loginPasswordInput =
+    document.getElementById("loginPassword");
+
+const routeTray =
+    document.getElementById("routeTray");
+
+const routeTrayTitle =
+    document.getElementById("routeTrayTitle");
+
+const routeTrayLocation =
+    document.getElementById("routeTrayLocation");
+
+const routeTrayDistance =
+    document.getElementById("routeTrayDistance");
+
+const routeTrayPrice =
+    document.getElementById("routeTrayPrice");
+
+const routeTrayEta =
+    document.getElementById("routeTrayEta");
+
+const routeTrayMap =
+    document.getElementById("routeTrayMap");
+
+const routeTrayBookNow =
+    document.getElementById("routeTrayBookNow");
+
+const routeTrayOpenMaps =
+    document.getElementById("routeTrayOpenMaps");
+
+const routeTrayClose =
+    document.getElementById("routeTrayClose");
+
 
 /* ================= COUNTY DATA ================= */
 
@@ -93,6 +150,154 @@ const API_BASE_URL = window.location.origin && window.location.origin !== "null"
     ? window.location.origin
     : "http://localhost:3000";
 
+function getStoredAuthState() {
+    try {
+        return JSON.parse(localStorage.getItem("kenyaStaysAuth") || sessionStorage.getItem("kenyaStaysAuth") || "{}") || {};
+    } catch (error) {
+        return {};
+    }
+}
+
+function getCurrentUserRole() {
+    const queryParams = new URLSearchParams(window.location.search);
+    const queryRole = queryParams.get("role");
+    const selectorRole = roleSelector ? roleSelector.value : "";
+    const authState = getStoredAuthState();
+    const storedRole = authState.role || localStorage.getItem("kenyaStaysRole") || sessionStorage.getItem("kenyaStaysRole");
+    const role = (selectorRole || queryRole || storedRole || "CUSTOMER").toUpperCase();
+    const validRoles = ["CUSTOMER", "OWNER", "ADMIN", "CUSTOMER CARE"];
+    const normalizedRole = validRoles.includes(role) ? role : "CUSTOMER";
+
+    if (roleSelector && roleSelector.value !== normalizedRole) {
+        roleSelector.value = normalizedRole;
+    }
+
+    if (queryRole || selectorRole || authState.role) {
+        localStorage.setItem("kenyaStaysRole", normalizedRole);
+    }
+
+    return normalizedRole;
+}
+
+function syncRoleSelector() {
+    if (!roleSelector) {
+        return;
+    }
+
+    roleSelector.value = getCurrentUserRole();
+}
+
+function updateAuthButtons() {
+    const isLoggedIn = Boolean(getStoredAuthState().isLoggedIn);
+
+    if (loginButton) {
+        loginButton.hidden = isLoggedIn;
+    }
+
+    if (logoutButton) {
+        logoutButton.hidden = !isLoggedIn;
+    }
+}
+
+function renderDashboardAccess() {
+    const role = getCurrentUserRole();
+    const ownerDashboardSection = document.getElementById("owner-dashboard");
+    const adminDashboardSection = document.getElementById("admin");
+    const shouldShowOwnerDashboard = role === "OWNER";
+    const shouldShowAdminDashboard = role === "ADMIN" || role === "OWNER";
+
+    if (ownerDashboardSection) {
+        ownerDashboardSection.hidden = !shouldShowOwnerDashboard;
+        ownerDashboardSection.style.display = shouldShowOwnerDashboard ? "" : "none";
+    }
+
+    if (adminDashboardSection) {
+        adminDashboardSection.hidden = !shouldShowAdminDashboard;
+        adminDashboardSection.style.display = shouldShowAdminDashboard ? "" : "none";
+    }
+}
+
+function refreshDashboardRoleState() {
+    syncRoleSelector();
+    renderDashboardAccess();
+    updateAuthButtons();
+
+    const currentUserRole = getCurrentUserRole();
+
+    if (currentUserRole === "OWNER") {
+        loadOwnerDashboard();
+        loadAdminDashboard();
+    } else if (currentUserRole === "ADMIN") {
+        loadAdminDashboard();
+    }
+}
+
+function openLoginModal() {
+    if (!loginModalBackdrop) {
+        return;
+    }
+
+    if (loginRoleSelect) {
+        loginRoleSelect.value = getCurrentUserRole();
+    }
+
+    loginModalBackdrop.hidden = false;
+}
+
+function closeLoginModal() {
+    if (loginModalBackdrop) {
+        loginModalBackdrop.hidden = true;
+    }
+}
+
+function handleLoginSubmit(event) {
+    event.preventDefault();
+
+    if (!loginRoleSelect || !loginEmailInput || !loginPasswordInput) {
+        return;
+    }
+
+    const email = String(loginEmailInput.value || "").trim();
+    const password = String(loginPasswordInput.value || "");
+
+    if (!email.includes("@") || password.length < 6) {
+        window.alert("Please enter a valid email and a password with at least 6 characters.");
+        return;
+    }
+
+    const selectedRole = String(loginRoleSelect.value || "CUSTOMER").toUpperCase();
+    const authState = {
+        isLoggedIn: true,
+        email,
+        role: selectedRole
+    };
+
+    localStorage.setItem("kenyaStaysAuth", JSON.stringify(authState));
+    localStorage.setItem("kenyaStaysRole", selectedRole);
+    sessionStorage.setItem("kenyaStaysAuth", JSON.stringify(authState));
+    sessionStorage.setItem("kenyaStaysRole", selectedRole);
+
+    if (roleSelector) {
+        roleSelector.value = selectedRole;
+    }
+
+    refreshDashboardRoleState();
+    closeLoginModal();
+    loginForm.reset();
+}
+
+function handleLogout() {
+    localStorage.removeItem("kenyaStaysAuth");
+    sessionStorage.removeItem("kenyaStaysAuth");
+    localStorage.setItem("kenyaStaysRole", "CUSTOMER");
+    sessionStorage.setItem("kenyaStaysRole", "CUSTOMER");
+
+    if (roleSelector) {
+        roleSelector.value = "CUSTOMER";
+    }
+
+    refreshDashboardRoleState();
+}
 
 async function fetchJson(url, options) {
 
@@ -212,6 +417,124 @@ async function submitBooking(event) {
 }
 
 
+function buildMapEmbedUrl(property) {
+    if (!property) {
+        return "https://www.google.com/maps?q=Kenya&z=6&output=embed";
+    }
+
+    const destination = property.latitude && property.longitude
+        ? `${property.latitude},${property.longitude}`
+        : `${property.name || "Airbnb"} ${property.location || ""} ${property.city || "Kenya"}`;
+
+    return `https://www.google.com/maps?q=${encodeURIComponent(destination)}&z=13&output=embed`;
+}
+
+function formatTravelEta(property) {
+    const distanceKm = Number(property?.distance_km || 0);
+
+    if (!distanceKm) {
+        return "ETA: approx. 15 min";
+    }
+
+    const etaMinutes = Math.max(8, Math.round(distanceKm * 5));
+
+    if (etaMinutes >= 60) {
+        const hours = Math.floor(etaMinutes / 60);
+        const minutes = etaMinutes % 60;
+        return `ETA: ${hours}h ${minutes}m`;
+    }
+
+    return `ETA: ${etaMinutes} min`;
+}
+
+function openRouteTray(property) {
+    if (!property || !routeTray) {
+        return;
+    }
+
+    const distanceText = Number.isFinite(property.distance_km) ? `${property.distance_km.toFixed(1)} km away` : "Distance available soon";
+    const priceText = Number.isFinite(property.nightly_rate) ? `KSh ${property.nightly_rate.toLocaleString()} / night` : "Price available soon";
+    const etaText = formatTravelEta(property);
+
+    if (routeTrayTitle) {
+        routeTrayTitle.textContent = property.name || "Selected Airbnb";
+    }
+
+    if (routeTrayLocation) {
+        routeTrayLocation.textContent = `${property.location || "Location"}, ${property.city || "Kenya"}`;
+    }
+
+    if (routeTrayDistance) {
+        routeTrayDistance.textContent = distanceText;
+    }
+
+    if (routeTrayPrice) {
+        routeTrayPrice.textContent = priceText;
+    }
+
+    if (routeTrayEta) {
+        routeTrayEta.textContent = etaText;
+    }
+
+    if (routeTrayMap) {
+        routeTrayMap.src = buildMapEmbedUrl(property);
+    }
+
+    routeTray.dataset.propertyName = property.name || "";
+    routeTray.dataset.propertyLocation = property.location || "";
+    routeTray.dataset.propertyCity = property.city || "Kenya";
+    routeTray.dataset.propertyLatitude = property.latitude ?? "";
+    routeTray.dataset.propertyLongitude = property.longitude ?? "";
+    routeTray.hidden = false;
+}
+
+function closeRouteTray() {
+    if (routeTray) {
+        routeTray.hidden = true;
+    }
+}
+
+function openPropertyDirections(property) {
+
+    if (!property || !property.latitude || !property.longitude) {
+        openRouteTray(property);
+        window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${property?.name || "Airbnb"} ${property?.location || "Kenya"}`)}`, "_blank", "noopener,noreferrer");
+        return;
+    }
+
+    const destination = `${property.latitude},${property.longitude}`;
+    const openMaps = (origin) => {
+        const url = origin
+            ? `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&travelmode=driving`
+            : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${property.name} ${property.location} ${property.city || "Kenya"}`)}`;
+
+        if (routeTray) {
+            openRouteTray(property);
+        }
+
+        window.open(url, "_blank", "noopener,noreferrer");
+    };
+
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            position => {
+                const origin = `${position.coords.latitude},${position.coords.longitude}`;
+                openMaps(origin);
+            },
+            () => openMaps(),
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 60000
+            }
+        );
+        return;
+    }
+
+    openMaps();
+
+}
+
 function displayPropertyRecommendations(recommendations) {
 
     if (!propertyRecommendations) {
@@ -236,10 +559,26 @@ function displayPropertyRecommendations(recommendations) {
                     <p>${property.distance_km} km away · ${property.location}, ${property.city}</p>
                     <strong>KSh ${property.nightly_rate.toLocaleString()} / night</strong>
                     <span>Available for your dates · Up to ${property.max_guests} guests</span>
+                    <button class="direction-button" type="button" data-direction-lat="${property.latitude ?? ""}" data-direction-lng="${property.longitude ?? ""}" data-direction-name="${property.name}" data-direction-location="${property.location}" data-direction-city="${property.city || "Kenya"}">Get directions</button>
                 </article>
             `).join("")}
         </div>
     `;
+
+    propertyRecommendations.querySelectorAll("[data-direction-lat]").forEach(button => {
+        button.addEventListener("click", () => {
+            const property = {
+                name: button.dataset.directionName,
+                location: button.dataset.directionLocation,
+                city: button.dataset.directionCity,
+                latitude: Number(button.dataset.directionLat),
+                longitude: Number(button.dataset.directionLng),
+                nightly_rate: Number(button.closest(".recommendation-card")?.querySelector("strong")?.textContent?.replace(/[^\d]/g, "") || 0),
+                distance_km: Number((button.closest(".recommendation-card")?.querySelector("p")?.textContent?.match(/(\d+(?:\.\d+)?)\s*km/) || [])[1] || 0)
+            };
+            openPropertyDirections(property);
+        });
+    });
 
 }
 
@@ -291,14 +630,14 @@ async function submitCustomerCareMessage(event) {
 
 async function loadOwnerDashboard() {
 
-    if (!ownerSummary || !ownerBookings) {
+    if (!ownerSummary || !ownerBookings || getCurrentUserRole() !== "OWNER") {
         return;
     }
 
     try {
 
         const data =
-            await fetchJson(`${API_BASE_URL}/api/owners/2/dashboard`);
+            await fetchJson(`${API_BASE_URL}/api/owners/2/dashboard?role=${getCurrentUserRole()}`);
 
         ownerSummary.innerHTML = `
             <div class="owner-stat"><strong>${data.summary.properties}</strong><span>Properties</span></div>
@@ -362,13 +701,19 @@ async function updateOwnerBooking(bookingId, action) {
 
 async function loadAdminDashboard() {
 
+    const currentUserRole = getCurrentUserRole();
+
     if (!adminSummary || !adminBookings || !adminTickets) {
+        return;
+    }
+
+    if (currentUserRole !== "ADMIN" && currentUserRole !== "OWNER") {
         return;
     }
 
     try {
 
-        const data = await fetchJson(`${API_BASE_URL}/api/admin/dashboard?admin_id=3`);
+        const data = await fetchJson(`${API_BASE_URL}/api/admin/dashboard?admin_id=${currentUserRole === "OWNER" ? 2 : 3}&role=${currentUserRole}`);
 
         const summary = data.summary;
         adminSummary.innerHTML = `
@@ -702,6 +1047,88 @@ if (adminDashboardRefresh) {
     adminDashboardRefresh.addEventListener("click", loadAdminDashboard);
 }
 
+if (roleSelector) {
+    roleSelector.addEventListener("change", () => {
+        localStorage.setItem("kenyaStaysRole", roleSelector.value);
+        sessionStorage.setItem("kenyaStaysRole", roleSelector.value);
+        refreshDashboardRoleState();
+    });
+}
+
+if (loginButton) {
+    loginButton.addEventListener("click", openLoginModal);
+}
+
+if (logoutButton) {
+    logoutButton.addEventListener("click", handleLogout);
+}
+
+if (closeLoginModalButton) {
+    closeLoginModalButton.addEventListener("click", closeLoginModal);
+}
+
+if (loginModalBackdrop) {
+    loginModalBackdrop.addEventListener("click", (event) => {
+        if (event.target === loginModalBackdrop) {
+            closeLoginModal();
+        }
+    });
+}
+
+if (loginForm) {
+    loginForm.addEventListener("submit", handleLoginSubmit);
+}
+
+if (routeTrayBookNow) {
+    routeTrayBookNow.addEventListener("click", () => {
+        const property = {
+            name: routeTray?.dataset?.propertyName || "Selected Airbnb",
+            location: routeTray?.dataset?.propertyLocation || "Location",
+            city: routeTray?.dataset?.propertyCity || "Kenya",
+            latitude: Number(routeTray?.dataset?.propertyLatitude || 0),
+            longitude: Number(routeTray?.dataset?.propertyLongitude || 0)
+        };
+
+        const bookingLocation = document.getElementById("bookingLocation");
+        const bookingForm = document.getElementById("bookingForm");
+
+        if (bookingLocation) {
+            bookingLocation.value = property.location || property.city || property.name || "";
+        }
+
+        if (bookingForm) {
+            bookingForm.scrollIntoView({ behavior: "smooth", block: "start" });
+            const firstInput = bookingForm.querySelector("input, select, textarea");
+            if (firstInput) {
+                firstInput.focus();
+            }
+        }
+    });
+}
+
+if (routeTrayOpenMaps) {
+    routeTrayOpenMaps.addEventListener("click", () => {
+        const property = {
+            name: routeTray?.dataset?.propertyName || "Selected Airbnb",
+            location: routeTray?.dataset?.propertyLocation || "Location",
+            city: routeTray?.dataset?.propertyCity || "Kenya",
+            latitude: Number(routeTray?.dataset?.propertyLatitude || 0),
+            longitude: Number(routeTray?.dataset?.propertyLongitude || 0)
+        };
+
+        const destination = `${property.latitude},${property.longitude}`;
+        const mapUrl = property.latitude && property.longitude
+            ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}&travelmode=driving`
+            : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${property.name} ${property.location} ${property.city}`)}`;
+
+        window.open(mapUrl, "_blank", "noopener,noreferrer");
+    });
+}
+
+if (routeTrayClose) {
+    routeTrayClose.addEventListener("click", closeRouteTray);
+}
+
 
 if (mobileMenuButton && navigation) {
 
@@ -820,11 +1247,14 @@ if (currentYear) {
 
 /* ================= START WEBSITE ================= */
 
+renderDashboardAccess();
+syncRoleSelector();
+updateAuthButtons();
+
 if (window.location.pathname === "/admin") {
     document.getElementById("admin")?.scrollIntoView();
 }
 
 checkBackend();
 loadCounties();
-loadOwnerDashboard();
-loadAdminDashboard();
+refreshDashboardRoleState();

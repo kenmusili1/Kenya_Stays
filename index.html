@@ -15,8 +15,47 @@
   <header class="site-header"><div class="container nav-container">
     <a href="#home" class="logo"><span class="logo-icon"><i class="fa-solid fa-house"></i></span>Kenya<span class="logo-highlight">Stays</span></a>
     <nav class="navigation" id="navigation"><a href="#home">Home</a><a href="#counties">Counties</a><a href="#booking">Request a Stay</a><a href="/admin">Admin</a><a href="#popular">Popular Areas</a><a href="#about">About</a></nav>
+    <div class="role-switcher" aria-label="Select your role">
+      <label for="roleSelector">Role</label>
+      <select id="roleSelector" class="role-selector">
+        <option value="CUSTOMER">Customer</option>
+        <option value="OWNER">Owner</option>
+        <option value="ADMIN">Admin</option>
+      </select>
+    </div>
+    <div class="auth-actions">
+      <button class="login-button" id="loginButton" type="button">Login</button>
+      <button class="logout-button" id="logoutButton" type="button" hidden>Logout</button>
+    </div>
     <button class="mobile-menu-btn" id="mobileMenuBtn" type="button" aria-label="Open menu" aria-expanded="false"><i class="fa-solid fa-bars"></i></button>
   </div></header>
+
+  <div class="login-modal-backdrop" id="loginModalBackdrop" hidden>
+    <div class="login-modal" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+      <button class="modal-close" id="closeLoginModal" type="button" aria-label="Close login dialog">&times;</button>
+      <div class="login-modal-header">
+        <span class="section-label">ACCOUNT ACCESS</span>
+        <h2 id="loginTitle">Sign in</h2>
+      </div>
+      <form id="loginForm" class="login-form">
+        <div class="form-field">
+          <label for="loginEmail">Email</label>
+          <input id="loginEmail" name="email" type="email" placeholder="name@example.com" autocomplete="email" required>
+        </div>
+        <div class="form-field">
+          <label for="loginPassword">Password</label>
+          <input id="loginPassword" name="password" type="password" placeholder="Minimum 6 characters" autocomplete="current-password" required>
+        </div>
+        <label for="loginRole">Choose your role</label>
+        <select id="loginRole" class="login-role-select" required>
+          <option value="CUSTOMER">Customer</option>
+          <option value="OWNER">Owner</option>
+          <option value="ADMIN">Admin</option>
+        </select>
+        <button class="booking-submit login-submit" type="submit">Continue</button>
+      </form>
+    </div>
+  </div>
 
   <main>
     <section class="hero" id="home"><div class="container hero-content"><div class="hero-text">
@@ -46,6 +85,38 @@
         <div class="property-recommendations" id="propertyRecommendations" aria-live="polite"></div>
       </form>
     </div></section>
+
+    <aside class="route-tray" id="routeTray" aria-live="polite" hidden>
+      <div class="route-tray-header">
+        <div>
+          <span class="section-label">DIRECTIONS</span>
+          <h3 id="routeTrayTitle">Your route</h3>
+        </div>
+        <button class="route-close" id="routeTrayClose" type="button" aria-label="Close route tray">&times;</button>
+      </div>
+      <div class="route-tray-body">
+        <div class="route-tray-map-wrap">
+          <iframe
+            id="routeTrayMap"
+            class="route-tray-map"
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            title="Selected property map preview"
+            allowfullscreen>
+          </iframe>
+        </div>
+        <p id="routeTrayLocation">Loading route...</p>
+        <div class="route-tray-meta">
+          <span id="routeTrayDistance">0 km away</span>
+          <span id="routeTrayPrice">KSh 0 / night</span>
+        </div>
+        <p id="routeTrayEta" class="route-tray-eta">ETA: calculating...</p>
+        <div class="route-tray-actions">
+          <button class="direction-button route-button" id="routeTrayOpenMaps" type="button">Open in Google Maps</button>
+          <button class="booking-submit route-book-button" id="routeTrayBookNow" type="button">Book now</button>
+        </div>
+      </div>
+    </aside>
 
     <section class="owner-dashboard-section" id="owner-dashboard"><div class="container">
       <div class="section-heading"><div><span class="section-label">OWNER PORTAL</span><h2>Owner Dashboard</h2><p>Review incoming requests and respond to stays assigned to your properties.</p></div><button class="dashboard-refresh" id="ownerDashboardRefresh" type="button"><i class="fa-solid fa-rotate"></i> Refresh</button></div>
