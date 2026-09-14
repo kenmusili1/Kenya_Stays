@@ -75,6 +75,15 @@ const ownerDashboardMessage =
 const ownerDashboardRefresh =
     document.getElementById("ownerDashboardRefresh");
 
+const ownerPropertyForm =
+    document.getElementById("ownerPropertyForm");
+
+const ownerPropertyMessage =
+    document.getElementById("ownerPropertyMessage");
+
+const ownerProperties =
+    document.getElementById("ownerProperties");
+
 const adminSummary =
     document.getElementById("adminSummary");
 
@@ -89,6 +98,15 @@ const adminDashboardMessage =
 
 const adminDashboardRefresh =
     document.getElementById("adminDashboardRefresh");
+
+const adminProperties =
+    document.getElementById("adminProperties");
+
+const adminPropertyForm =
+    document.getElementById("adminPropertyForm");
+
+const adminPropertyMessage =
+    document.getElementById("adminPropertyMessage");
 
 const roleSelector =
     document.getElementById("roleSelector");
@@ -632,19 +650,36 @@ async function loadOwnerDashboard() {
 
         if (data.bookings.length === 0) {
             ownerBookings.innerHTML = "<p class=\"recommendation-empty\">No booking requests yet.</p>";
-            return;
+        } else {
+            ownerBookings.innerHTML = data.bookings.map(booking => `
+                <article class="owner-booking-card">
+                    <div><span class="section-label">BOOKING #${booking.booking_id}</span><h3>${booking.location} · ${booking.accommodation}</h3><p>${booking.check_in} to ${booking.check_out} · ${booking.guests} guest${booking.guests === 1 ? "" : "s"}</p></div>
+                    <div class="owner-booking-meta"><strong>KSh ${Number(booking.amount || 0).toLocaleString()}</strong><span class="booking-status ${booking.status}">${booking.status}</span>${booking.status === "pending" ? `<div class="owner-actions"><button type="button" data-booking-action="accept" data-booking-id="${booking.booking_id}">Accept</button><button type="button" data-booking-action="decline" data-booking-id="${booking.booking_id}">Decline</button></div>` : ""}</div>
+                </article>
+            `).join("");
+
+            ownerBookings.querySelectorAll("[data-booking-action]").forEach(button => {
+                button.addEventListener("click", () => updateOwnerBooking(button.dataset.bookingId, button.dataset.bookingAction));
+            });
         }
 
-        ownerBookings.innerHTML = data.bookings.map(booking => `
-            <article class="owner-booking-card">
-                <div><span class="section-label">BOOKING #${booking.booking_id}</span><h3>${booking.location} · ${booking.accommodation}</h3><p>${booking.check_in} to ${booking.check_out} · ${booking.guests} guest${booking.guests === 1 ? "" : "s"}</p></div>
-                <div class="owner-booking-meta"><strong>KSh ${Number(booking.amount || 0).toLocaleString()}</strong><span class="booking-status ${booking.status}">${booking.status}</span>${booking.status === "pending" ? `<div class="owner-actions"><button type="button" data-booking-action="accept" data-booking-id="${booking.booking_id}">Accept</button><button type="button" data-booking-action="decline" data-booking-id="${booking.booking_id}">Decline</button></div>` : ""}</div>
-            </article>
-        `).join("");
-
-        ownerBookings.querySelectorAll("[data-booking-action]").forEach(button => {
-            button.addEventListener("click", () => updateOwnerBooking(button.dataset.bookingId, button.dataset.bookingAction));
-        });
+        if (!data.properties || data.properties.length === 0) {
+            ownerProperties.innerHTML = "<p class=\"recommendation-empty\">No properties submitted yet.</p>";
+        } else {
+            ownerProperties.innerHTML = data.properties.map(property => `
+                <article class="owner-property-card">
+                    <div>
+                        <span class="section-label">PROPERTY #${property.property_id}</span>
+                        <h3>${property.name}</h3>
+                        <p>${property.location}, ${property.city} · ${property.accommodation}</p>
+                    </div>
+                    <div class="owner-booking-meta">
+                        <strong>KSh ${Number(property.nightly_rate || 0).toLocaleString()} / night</strong>
+                        <span class="booking-status ${property.approved ? "success" : "pending"}">${property.approved ? "Approved" : "Pending approval"}</span>
+                    </div>
+                </article>
+            `).join("");
+        }
 
     } catch (error) {
 
@@ -680,6 +715,57 @@ async function updateOwnerBooking(bookingId, action) {
 
     }
 
+}
+
+async function submitOwnerProperty(event) {
+    event.preventDefault();
+
+    if (!ownerPropertyForm) {
+        return;
+    }
+
+    const formData = new FormData(ownerPropertyForm);
+    const payload = Object.fromEntries(formData.entries());
+
+    payload.owner_id = Number(payload.owner_id || 2);
+    payload.nightly_rate = Number(payload.nightly_rate);
+    payload.max_guests = Number(payload.max_guests);
+    payload.latitude = payload.latitude === "" ? 0 : Number(payload.latitude);
+    payload.longitude = payload.longitude === "" ? 0 : Number(payload.longitude);
+    payload.available = payload.available === "true";
+    payload.approved = false;
+
+    if (ownerPropertyMessage) {
+        ownerPropertyMessage.textContent = "Submitting property...";
+        ownerPropertyMessage.className = "booking-message";
+    }
+
+    try {
+        const data = await fetchJson(`${API_BASE_URL}/api/properties?owner_id=${payload.owner_id}&role=${getCurrentUserRole()}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        if (ownerPropertyMessage) {
+            ownerPropertyMessage.textContent = data.message || "Property submitted for admin approval.";
+            ownerPropertyMessage.className = "booking-message success";
+        }
+
+        ownerPropertyForm.reset();
+        document.getElementById("ownerPropertyOwner").value = payload.owner_id;
+        document.getElementById("ownerPropertyGuests").value = 4;
+        document.getElementById("ownerPropertyAvailable").value = "true";
+
+        await loadOwnerDashboard();
+        await loadAdminDashboard();
+
+    } catch (error) {
+        if (ownerPropertyMessage) {
+            ownerPropertyMessage.textContent = error.message || "Unable to submit property.";
+            ownerPropertyMessage.className = "booking-message error";
+        }
+    }
 }
 
 
@@ -718,6 +804,38 @@ async function loadAdminDashboard() {
             ? "<p class=\"recommendation-empty\">No customer-care tickets yet.</p>"
             : data.customer_messages.slice().reverse().slice(0, 6).map(ticket => `<article class="admin-ticket"><strong>${ticket.subject}</strong><span>${ticket.name} · ${ticket.status}</span><p>${ticket.message}</p></article>`).join("");
 
+        if (!data.properties || data.properties.length === 0) {
+            adminProperties.innerHTML = "<p class=\"recommendation-empty\">No listings submitted yet.</p>";
+        } else {
+            const pendingProperties = data.properties.filter(property => property.approved === false || property.approved === null);
+
+            if (pendingProperties.length === 0) {
+                adminProperties.innerHTML = "<p class=\"recommendation-empty\">No pending listing approvals.</p>";
+            } else {
+                adminProperties.innerHTML = pendingProperties.map(property => `
+                    <article class="owner-property-card">
+                        <div>
+                            <span class="section-label">PROPERTY #${property.property_id}</span>
+                            <h3>${property.name}</h3>
+                            <p>${property.location}, ${property.city} · ${property.accommodation}</p>
+                        </div>
+                        <div class="owner-booking-meta">
+                            <strong>KSh ${Number(property.nightly_rate || 0).toLocaleString()} / night</strong>
+                            <span class="booking-status pending">Pending approval</span>
+                            <div class="owner-actions">
+                                <button type="button" data-property-approve="true" data-property-id="${property.property_id}">Approve</button>
+                                <button type="button" data-property-approve="false" data-property-id="${property.property_id}">Reject</button>
+                            </div>
+                        </div>
+                    </article>
+                `).join("");
+
+                adminProperties.querySelectorAll("[data-property-approve]").forEach(button => {
+                    button.addEventListener("click", () => updatePropertyApproval(Number(button.dataset.propertyId), button.dataset.propertyApprove === "true"));
+                });
+            }
+        }
+
     } catch (error) {
 
         adminDashboardMessage.textContent = error.message || "Admin dashboard connection failed.";
@@ -725,6 +843,86 @@ async function loadAdminDashboard() {
 
     }
 
+}
+
+async function updatePropertyApproval(propertyId, approved) {
+    if (!adminDashboardMessage) {
+        return;
+    }
+
+    adminDashboardMessage.textContent = approved ? "Approving property..." : "Rejecting property...";
+    adminDashboardMessage.className = "booking-message";
+
+    try {
+        const data = await fetchJson(`${API_BASE_URL}/api/admin/properties/${propertyId}/approval?admin_id=3&role=ADMIN`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ approved })
+        });
+
+        adminDashboardMessage.textContent = data.success
+            ? `Property ${approved ? "approved" : "rejected"} successfully.`
+            : "Property approval update failed.";
+        adminDashboardMessage.className = "booking-message success";
+
+        await loadOwnerDashboard();
+        await loadAdminDashboard();
+    } catch (error) {
+        adminDashboardMessage.textContent = error.message || "Unable to update property approval.";
+        adminDashboardMessage.className = "booking-message error";
+    }
+}
+
+async function submitAdminProperty(event) {
+    event.preventDefault();
+
+    if (!adminPropertyForm) {
+        return;
+    }
+
+    const formData = new FormData(adminPropertyForm);
+    const payload = Object.fromEntries(formData.entries());
+
+    payload.owner_id = Number(payload.owner_id || 2);
+    payload.nightly_rate = Number(payload.nightly_rate);
+    payload.max_guests = Number(payload.max_guests);
+    payload.latitude = payload.latitude === "" ? 0 : Number(payload.latitude);
+    payload.longitude = payload.longitude === "" ? 0 : Number(payload.longitude);
+    payload.approved = payload.approved === "true";
+    payload.available = payload.available === "true";
+
+    if (adminPropertyMessage) {
+        adminPropertyMessage.textContent = "Adding listing...";
+        adminPropertyMessage.className = "booking-message";
+    }
+
+    try {
+        const data = await fetchJson(`${API_BASE_URL}/api/properties?admin_id=3&role=ADMIN`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        if (adminPropertyMessage) {
+            adminPropertyMessage.textContent = data.message || "Property added successfully.";
+            adminPropertyMessage.className = "booking-message success";
+        }
+
+        adminPropertyForm.reset();
+        document.getElementById("adminPropertyOwner").value = 2;
+        document.getElementById("adminPropertyGuests").value = 4;
+        document.getElementById("adminPropertyApproved").value = "true";
+        document.getElementById("adminPropertyAvailable").value = "true";
+
+        await loadOwnerDashboard();
+        await loadAdminDashboard();
+
+    } catch (error) {
+        if (adminPropertyMessage) {
+            adminPropertyMessage.textContent = error.message || "Unable to add property.";
+            adminPropertyMessage.className = "booking-message error";
+        }
+    }
 }
 
 
@@ -1043,6 +1241,14 @@ if (ownerDashboardRefresh) {
 
 if (adminDashboardRefresh) {
     adminDashboardRefresh.addEventListener("click", loadAdminDashboard);
+}
+
+if (ownerPropertyForm) {
+    ownerPropertyForm.addEventListener("submit", submitOwnerProperty);
+}
+
+if (adminPropertyForm) {
+    adminPropertyForm.addEventListener("submit", submitAdminProperty);
 }
 
 if (roleSelector) {

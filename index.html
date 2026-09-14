@@ -84,16 +84,83 @@
     <section class="owner-dashboard-section" id="owner-dashboard"><div class="container">
       <div class="section-heading"><div><span class="section-label">OWNER PORTAL</span><h2>Owner Dashboard</h2><p>Review incoming requests and respond to stays assigned to your properties.</p></div><button class="dashboard-refresh" id="ownerDashboardRefresh" type="button"><i class="fa-solid fa-rotate"></i> Refresh</button></div>
       <div class="owner-summary" id="ownerSummary"></div>
+
+      <div class="owner-property-manager">
+        <h3>Add New Property</h3>
+        <form class="booking-form owner-property-form" id="ownerPropertyForm">
+          <input type="hidden" name="owner_id" id="ownerPropertyOwner" value="2">
+          <div class="form-row">
+            <div class="form-field"><label for="ownerPropertyName">Property name</label><input id="ownerPropertyName" name="name" type="text" placeholder="Nairobi Garden Apartment" required></div>
+            <div class="form-field"><label for="ownerPropertyLocation">Location</label><input id="ownerPropertyLocation" name="location" type="text" placeholder="Westlands" required></div>
+          </div>
+          <div class="form-row">
+            <div class="form-field"><label for="ownerPropertyCity">City</label><input id="ownerPropertyCity" name="city" type="text" placeholder="Nairobi" required></div>
+            <div class="form-field"><label for="ownerPropertyAccommodation">Accommodation</label><select id="ownerPropertyAccommodation" name="accommodation" required><option value="Apartment">Apartment</option><option value="House">House</option><option value="Villa">Villa</option><option value="Room">Room</option></select></div>
+          </div>
+          <div class="form-row">
+            <div class="form-field"><label for="ownerPropertyRate">Nightly rate</label><input id="ownerPropertyRate" name="nightly_rate" type="number" min="1" placeholder="6500" required></div>
+            <div class="form-field"><label for="ownerPropertyGuests">Max guests</label><input id="ownerPropertyGuests" name="max_guests" type="number" min="1" value="4" required></div>
+          </div>
+          <div class="form-row">
+            <div class="form-field"><label for="ownerPropertyLatitude">Latitude</label><input id="ownerPropertyLatitude" name="latitude" type="number" step="any" placeholder="-1.2676"></div>
+            <div class="form-field"><label for="ownerPropertyLongitude">Longitude</label><input id="ownerPropertyLongitude" name="longitude" type="number" step="any" placeholder="36.8108"></div>
+          </div>
+          <div class="form-field"><label for="ownerPropertyAvailable">Available</label><select id="ownerPropertyAvailable" name="available"><option value="true">Available</option><option value="false">Unavailable</option></select></div>
+          <button class="booking-submit" id="ownerPropertySubmit" type="submit">Submit Property <i class="fa-solid fa-plus"></i></button>
+          <p class="booking-message" id="ownerPropertyMessage" aria-live="polite"></p>
+        </form>
+      </div>
+
       <div class="owner-bookings" id="ownerBookings"><p class="recommendation-empty">Loading owner bookings...</p></div>
+      <div class="owner-property-list" id="ownerProperties"><p class="recommendation-empty">Loading properties...</p></div>
       <p class="booking-message" id="ownerDashboardMessage" aria-live="polite"></p>
     </div></section>
 
     <section class="admin-dashboard-section" id="admin"><div class="container">
       <div class="section-heading"><div><span class="section-label">ADMINISTRATION</span><h2>Admin Dashboard</h2><p>Monitor platform activity, bookings, payments, and customer-care work.</p></div><button class="dashboard-refresh" id="adminDashboardRefresh" type="button"><i class="fa-solid fa-rotate"></i> Refresh</button></div>
       <div class="admin-summary" id="adminSummary"><p class="recommendation-empty">Loading admin metrics...</p></div>
+
+      <div class="admin-property-list" id="adminProperties"><p class="recommendation-empty">Loading pending properties...</p></div>
+
+      <div class="admin-property-manager">
+        <h3>Add New Listing</h3>
+        <form class="booking-form admin-property-form" id="adminPropertyForm">
+          <div class="form-row">
+            <div class="form-field"><label for="adminPropertyName">Property name</label><input id="adminPropertyName" name="name" type="text" placeholder="Nairobi Garden Apartment" required></div>
+            <div class="form-field"><label for="adminPropertyOwner">Owner ID</label><input id="adminPropertyOwner" name="owner_id" type="number" min="1" value="2" required></div>
+          </div>
+          <div class="form-row">
+            <div class="form-field"><label for="adminPropertyLocation">Location</label><input id="adminPropertyLocation" name="location" type="text" placeholder="Westlands" required></div>
+            <div class="form-field"><label for="adminPropertyCity">City</label><input id="adminPropertyCity" name="city" type="text" placeholder="Nairobi" required></div>
+          </div>
+          <div class="form-row">
+            <div class="form-field"><label for="adminPropertyAccommodation">Accommodation</label><select id="adminPropertyAccommodation" name="accommodation" required><option value="Apartment">Apartment</option><option value="House">House</option><option value="Villa">Villa</option><option value="Room">Room</option></select></div>
+            <div class="form-field"><label for="adminPropertyRate">Nightly rate</label><input id="adminPropertyRate" name="nightly_rate" type="number" min="1" placeholder="6500" required></div>
+          </div>
+          <div class="form-row">
+            <div class="form-field"><label for="adminPropertyGuests">Max guests</label><input id="adminPropertyGuests" name="max_guests" type="number" min="1" value="4" required></div>
+            <div class="form-field"><label for="adminPropertyApproved">Approval</label><select id="adminPropertyApproved" name="approved"><option value="true">Approved</option><option value="false">Pending</option></select></div>
+          </div>
+          <div class="form-row">
+            <div class="form-field"><label for="adminPropertyLatitude">Latitude</label><input id="adminPropertyLatitude" name="latitude" type="number" step="any" placeholder="-1.2676"></div>
+            <div class="form-field"><label for="adminPropertyLongitude">Longitude</label><input id="adminPropertyLongitude" name="longitude" type="number" step="any" placeholder="36.8108"></div>
+          </div>
+          <div class="form-field"><label for="adminPropertyAvailable">Available</label><select id="adminPropertyAvailable" name="available"><option value="true">Available</option><option value="false">Unavailable</option></select></div>
+          <button class="booking-submit" id="adminPropertySubmit" type="submit">Add Listing <i class="fa-solid fa-plus"></i></button>
+          <p class="booking-message" id="adminPropertyMessage" aria-live="polite"></p>
+        </form>
+      </div>
+
       <div class="admin-columns"><div><h3>Recent bookings</h3><div class="admin-bookings" id="adminBookings"></div></div><div><h3>Customer-care tickets</h3><div class="admin-tickets" id="adminTickets"></div></div></div>
       <p class="booking-message" id="adminDashboardMessage" aria-live="polite"></p>
     </div></section>
+
+    <section class="featured-section" id="featured"><div class="container"><div class="section-heading centered"><span class="section-label">FEATURED STAYS</span><h2>Beautiful escapes across Kenya</h2><p>From city rooftops to beachside villas, discover standout stays that feel memorable from the moment you arrive.</p></div><div class="featured-grid">
+      <article class="featured-card"><img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=80" alt="Modern Airbnb apartment in Nairobi"><div class="featured-overlay"><span>City Living</span><h3>Nairobi</h3><p>Stylish apartments with skyline views and walkable neighborhoods.</p></div></article>
+      <article class="featured-card"><img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=80" alt="Beach getaway near Diani"><div class="featured-overlay"><span>Beach Escape</span><h3>Diani</h3><p>Oceanfront villas, soft sands and relaxed coastal evenings.</p></div></article>
+      <article class="featured-card"><img src="https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=900&q=80" alt="Safari lodge in Kenya"><div class="featured-overlay"><span>Wild Luxury</span><h3>Safari Lodge</h3><p>Spacious stays designed for unforgettable wildlife experiences.</p></div></article>
+      <article class="featured-card"><img src="https://images.unsplash.com/photo-1519046904884-53103b34b206?auto=format&fit=crop&w=900&q=80" alt="Lakefront home in Naivasha"><div class="featured-overlay"><span>Lakefront</span><h3>Naivasha</h3><p>Quiet hideaways with warm interiors, views and fresh air.</p></div></article>
+    </div></div></section>
 
     <section class="counties-section" id="counties"><div class="container">
       <div class="section-heading"><div><span class="section-label">DISCOVER KENYA</span><h2>Explore Accommodation by County</h2><p>Browse short-term rental information across Kenya's counties and discover your next destination.</p></div><div class="sort-area"><label for="sortSelect">Sort by:</label><select id="sortSelect"><option value="listings">Most Listings</option><option value="name">County Name</option></select></div></div>
@@ -101,9 +168,9 @@
     </div></section>
 
     <section class="popular-section" id="popular"><div class="container"><div class="section-heading centered"><span class="section-label">POPULAR DESTINATIONS</span><h2>Explore Kenya's Top Destinations</h2><p>Discover some of Kenya's most popular travel and accommodation destinations.</p></div><div class="destination-grid">
-      <article class="destination-card"><img src="images/nairobi.jpg" alt="Nairobi skyline"><div class="destination-overlay"><span>Nairobi County</span><h3>Nairobi</h3><a href="https://www.airbnb.com/s/Nairobi--Kenya/homes" target="_blank" rel="noopener noreferrer">Explore Nairobi <i class="fa-solid fa-arrow-right"></i></a></div></article>
-      <article class="destination-card"><img src="images/mombasa.jpg" alt="Kenyan coast landscape"><div class="destination-overlay"><span>Mombasa County</span><h3>Mombasa</h3><a href="https://www.airbnb.com/s/Mombasa--Kenya/homes" target="_blank" rel="noopener noreferrer">Explore Mombasa <i class="fa-solid fa-arrow-right"></i></a></div></article>
-      <article class="destination-card"><img src="images/diani.jpg" alt="Diani Beach coastline"><div class="destination-overlay"><span>Kwale County</span><h3>Diani Beach</h3><a href="https://www.airbnb.com/s/Diani--Kenya/homes" target="_blank" rel="noopener noreferrer">Explore Diani <i class="fa-solid fa-arrow-right"></i></a></div></article>
+      <article class="destination-card"><img src="https://images.unsplash.com/photo-1493246507139-91e8fad9978e?auto=format&fit=crop&w=900&q=80" alt="Nairobi skyline"><div class="destination-overlay"><span>Nairobi County</span><h3>Nairobi</h3><a href="https://www.airbnb.com/s/Nairobi--Kenya/homes" target="_blank" rel="noopener noreferrer">Explore Nairobi <i class="fa-solid fa-arrow-right"></i></a></div></article>
+      <article class="destination-card"><img src="https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=900&q=80" alt="Kenyan coast landscape"><div class="destination-overlay"><span>Mombasa County</span><h3>Mombasa</h3><a href="https://www.airbnb.com/s/Mombasa--Kenya/homes" target="_blank" rel="noopener noreferrer">Explore Mombasa <i class="fa-solid fa-arrow-right"></i></a></div></article>
+      <article class="destination-card"><img src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=900&q=80" alt="Diani Beach coastline"><div class="destination-overlay"><span>Kwale County</span><h3>Diani Beach</h3><a href="https://www.airbnb.com/s/Diani--Kenya/homes" target="_blank" rel="noopener noreferrer">Explore Diani <i class="fa-solid fa-arrow-right"></i></a></div></article>
     </div></div></section>
 
     <section class="about-section" id="about"><div class="container about-grid"><div class="about-image"><img src="images/kenya-hero.jpg" alt="Kenyan landscape"></div><div class="about-content"><span class="section-label">ABOUT THE DIRECTORY</span><h2>Your Guide to Short-Term Accommodation in Kenya</h2><p>KenyaStays makes it easier to discover short-term rental and holiday accommodation opportunities across Kenya.</p><p>Browse counties, compare available listing information and explore popular destinations throughout the country.</p><div class="about-points"><div><i class="fa-solid fa-check"></i> County-by-county directory</div><div><i class="fa-solid fa-check"></i> Search and filtering</div><div><i class="fa-solid fa-check"></i> Destination discovery</div><div><i class="fa-solid fa-check"></i> Mobile-friendly design</div></div></div></div></section>

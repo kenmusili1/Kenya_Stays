@@ -595,6 +595,7 @@ function findPropertyRecommendations({ location, latitude, longitude, checkIn, c
     }
 
     const recommendations = properties
+        .filter(property => property.approved !== false)
         .filter(property => property.available)
         .filter(property => property.max_guests >= guests)
         .filter(property => !maxPrice || property.nightly_rate <= Number(maxPrice))
@@ -637,6 +638,17 @@ function isAdmin(request) {
     const role = String(query.role || body.role || "").toUpperCase();
 
     return adminId === 3 || role === "ADMIN" || role === "OWNER";
+
+}
+
+function isOwner(request) {
+
+    const body = request.body || {};
+    const query = request.query || {};
+    const ownerId = Number(query.owner_id ?? body.owner_id ?? request.params.ownerId ?? 0);
+    const role = String(query.role || body.role || "").toUpperCase();
+
+    return ownerId === 2 || role === "OWNER";
 
 }
 
@@ -798,6 +810,77 @@ app.get("/api/properties", (_req, res) => {
     return res.json({
         success: true,
         properties
+    });
+
+});
+
+app.post("/api/properties", (req, res) => {
+
+    const isAllowed = isAdmin(req) || isOwner(req);
+
+    if (!isAllowed) {
+        return res.status(403).json({ success: false, message: "Admin or owner access is required." });
+    }
+
+    const {
+        name,
+        location,
+        city,
+        latitude,
+        longitude,
+        nightly_rate,
+        max_guests,
+        accommodation,
+        owner_id,
+        approved,
+        available
+    } = req.body;
+
+    if (!name || !location || !city || !accommodation || !nightly_rate || !max_guests) {
+        return res.status(400).json({
+            success: false,
+            message: "Property name, location, city, accommodation, nightly rate, and max guests are required."
+        });
+    }
+
+    const parsedNightlyRate = Number(nightly_rate);
+    const parsedMaxGuests = Number(max_guests);
+    const parsedLatitude = Number(latitude ?? 0);
+    const parsedLongitude = Number(longitude ?? 0);
+
+    if (!Number.isFinite(parsedNightlyRate) || parsedNightlyRate <= 0) {
+        return res.status(400).json({ success: false, message: "Nightly rate must be a positive number." });
+    }
+
+    if (!Number.isFinite(parsedMaxGuests) || parsedMaxGuests < 1) {
+        return res.status(400).json({ success: false, message: "Maximum guests must be at least 1." });
+    }
+
+const isOwnerSubmission = !isAdmin(req);
+    const fallbackApprovedState = isOwnerSubmission ? false : true;
+
+    const newProperty = {
+        property_id: properties.length + 1,
+        owner_id: Number(owner_id ?? 2),
+        approved: Object.prototype.hasOwnProperty.call(req.body, "approved") ? approved !== false : fallbackApprovedState,
+        name: String(name).trim(),
+        location: String(location).trim(),
+        city: String(city).trim(),
+        latitude: parsedLatitude,
+        longitude: parsedLongitude,
+        nightly_rate: parsedNightlyRate,
+        max_guests: parsedMaxGuests,
+        accommodation: String(accommodation).trim(),
+        available: available !== false,
+        unavailable_dates: []
+    };
+
+    properties.push(newProperty);
+
+    return res.status(201).json({
+        success: true,
+        message: "Property added successfully.",
+        property: newProperty
     });
 
 });

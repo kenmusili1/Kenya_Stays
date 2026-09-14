@@ -16,7 +16,9 @@ html {
 body {
     font-family: Arial, Helvetica, sans-serif;
     color: #173b2f;
-    background: #ffffff;
+    background:
+        radial-gradient(circle at top, rgba(120, 188, 146, 0.16), transparent 38%),
+        linear-gradient(180deg, #f7faf8 0%, #ffffff 20%, #ffffff 100%);
     line-height: 1.6;
 }
 
@@ -230,11 +232,24 @@ a {
 .hero {
     min-height: 650px;
     position: relative;
-    background-image: url("../images/kenya-hero.jpg");
+    background-image:
+        linear-gradient(90deg, rgba(10,40,30,0.82), rgba(10,40,30,0.52), rgba(10,40,30,0.18)),
+        url("../images/kenya-hero.jpg");
     background-size: cover;
     background-position: center;
     display: flex;
     align-items: center;
+    overflow: hidden;
+}
+
+.hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(120deg, rgba(255,255,255,0.12), transparent 40%),
+        radial-gradient(circle at 80% 20%, rgba(158, 225, 180, 0.28), transparent 25%);
+    z-index: 1;
 }
 
 .hero-overlay {
@@ -246,6 +261,7 @@ a {
 .hero-content {
     position: relative;
     z-index: 2;
+    animation: fadeUp 0.8s ease-out;
 }
 
 .hero-text {
@@ -279,6 +295,13 @@ a {
     font-size: 20px;
     margin-bottom: 30px;
     color: #e7f3eb;
+}
+
+.hero-badge,
+.hero-cta,
+.hero-search,
+.hero-features div {
+    animation: floatIn 0.9s ease-out both;
 }
 
 .hero-cta {
@@ -920,6 +943,76 @@ a {
 }
 
 /* =========================
+   FEATURED SECTION
+========================= */
+
+.featured-section {
+    padding: 100px 0 40px;
+    background: linear-gradient(180deg, #f9fbfa 0%, #ffffff 100%);
+}
+
+.featured-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 22px;
+}
+
+.featured-card {
+    position: relative;
+    height: 420px;
+    overflow: hidden;
+    border-radius: 26px;
+    box-shadow: 0 15px 45px rgba(16, 48, 38, 0.12);
+}
+
+.featured-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.featured-card:hover img {
+    transform: scale(1.05);
+}
+
+.featured-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: end;
+    padding: 24px 20px 22px;
+    background: linear-gradient(180deg, rgba(5, 21, 18, 0.08), rgba(5, 21, 18, 0.8));
+    color: white;
+}
+
+.featured-overlay span {
+    display: inline-block;
+    width: fit-content;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(8px);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.featured-overlay h3 {
+    margin-top: 12px;
+    font-size: clamp(24px, 2vw, 30px);
+}
+
+.featured-overlay p {
+    margin-top: 8px;
+    color: rgba(255,255,255,0.8);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* =========================
    SECTIONS
 ========================= */
 
@@ -1066,6 +1159,13 @@ a {
     border-radius: 22px;
     overflow: hidden;
     position: relative;
+    box-shadow: 0 14px 32px rgba(13, 35, 28, 0.08);
+    transition: transform 0.28s ease, box-shadow 0.28s ease;
+}
+
+.destination-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 22px 40px rgba(13, 35, 28, 0.12);
 }
 
 .destination-card img {
@@ -1073,6 +1173,7 @@ a {
     height: 100%;
     object-fit: cover;
     transition: 0.5s;
+    filter: saturate(1.08) contrast(1.02);
 }
 
 .destination-card:hover img {
@@ -1234,6 +1335,28 @@ a {
     font-size: 12px;
 }
 
+@keyframes fadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(18px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes floatIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 /* =========================
    MOBILE
 ========================= */
@@ -1243,6 +1366,7 @@ a {
     .navigation.open { display: flex; position: absolute; top: 76px; left: 0; right: 0; padding: 20px 4%; background: white; flex-direction: column; gap: 15px; border-bottom: 1px solid #e8eee9; }
     .mobile-menu-btn { display: block; }
     .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .featured-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .county-grid { grid-template-columns: repeat(2, 1fr); }
     .destination-grid { grid-template-columns: 1fr; }
     .about-grid { grid-template-columns: 1fr; }
@@ -1257,11 +1381,11 @@ a {
 @media (max-width: 600px) {
     .admin-row { grid-template-columns: 1fr 1fr; }
     .admin-revenue { grid-column: span 1; }
-}
-
-@media (max-width: 600px) {
-    .hero { min-height: 650px; }
+    .featured-grid { grid-template-columns: 1fr; }
+    .featured-card { height: 300px; }
+    .hero { min-height: 620px; background-position: center center; }
     .hero h1 { font-size: 45px; }
+    .hero p { font-size: 17px; }
     .hero-search { flex-direction: column; }
     .search-button { padding: 15px; }
     .hero-features { flex-direction: column; gap: 12px; }
