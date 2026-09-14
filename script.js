@@ -75,6 +75,12 @@ const ownerDashboardMessage =
 const ownerDashboardRefresh =
     document.getElementById("ownerDashboardRefresh");
 
+const ownerPropertyToggleButton =
+    document.getElementById("ownerPropertyToggleButton");
+
+const ownerPropertyPanel =
+    document.getElementById("ownerPropertyPanel");
+
 const ownerPropertyForm =
     document.getElementById("ownerPropertyForm");
 
@@ -101,6 +107,12 @@ const adminDashboardRefresh =
 
 const adminProperties =
     document.getElementById("adminProperties");
+
+const adminPropertyToggleButton =
+    document.getElementById("adminPropertyToggleButton");
+
+const adminPropertyPanel =
+    document.getElementById("adminPropertyPanel");
 
 const adminPropertyForm =
     document.getElementById("adminPropertyForm");
@@ -1241,6 +1253,34 @@ if (ownerDashboardRefresh) {
 
 if (adminDashboardRefresh) {
     adminDashboardRefresh.addEventListener("click", loadAdminDashboard);
+}
+
+if (ownerPropertyToggleButton && ownerPropertyPanel) {
+    ownerPropertyToggleButton.addEventListener("click", () => {
+        const isHidden = ownerPropertyPanel.hasAttribute("hidden");
+        ownerPropertyPanel.hidden = !isHidden;
+
+        if (!ownerPropertyPanel.hidden) {
+            const firstInput = ownerPropertyPanel.querySelector("input, select, textarea");
+            if (firstInput) {
+                firstInput.focus();
+            }
+        }
+    });
+}
+
+if (adminPropertyToggleButton && adminPropertyPanel) {
+    adminPropertyToggleButton.addEventListener("click", () => {
+        const isHidden = adminPropertyPanel.hasAttribute("hidden");
+        adminPropertyPanel.hidden = !isHidden;
+
+        if (!adminPropertyPanel.hidden) {
+            const firstInput = adminPropertyPanel.querySelector("input, select, textarea");
+            if (firstInput) {
+                firstInput.focus();
+            }
+        }
+    });
 }
 
 if (ownerPropertyForm) {

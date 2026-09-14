@@ -86,29 +86,31 @@
       <div class="owner-summary" id="ownerSummary"></div>
 
       <div class="owner-property-manager">
-        <h3>Add New Property</h3>
-        <form class="booking-form owner-property-form" id="ownerPropertyForm">
-          <input type="hidden" name="owner_id" id="ownerPropertyOwner" value="2">
-          <div class="form-row">
-            <div class="form-field"><label for="ownerPropertyName">Property name</label><input id="ownerPropertyName" name="name" type="text" placeholder="Nairobi Garden Apartment" required></div>
-            <div class="form-field"><label for="ownerPropertyLocation">Location</label><input id="ownerPropertyLocation" name="location" type="text" placeholder="Westlands" required></div>
-          </div>
-          <div class="form-row">
-            <div class="form-field"><label for="ownerPropertyCity">City</label><input id="ownerPropertyCity" name="city" type="text" placeholder="Nairobi" required></div>
-            <div class="form-field"><label for="ownerPropertyAccommodation">Accommodation</label><select id="ownerPropertyAccommodation" name="accommodation" required><option value="Apartment">Apartment</option><option value="House">House</option><option value="Villa">Villa</option><option value="Room">Room</option></select></div>
-          </div>
-          <div class="form-row">
-            <div class="form-field"><label for="ownerPropertyRate">Nightly rate</label><input id="ownerPropertyRate" name="nightly_rate" type="number" min="1" placeholder="6500" required></div>
-            <div class="form-field"><label for="ownerPropertyGuests">Max guests</label><input id="ownerPropertyGuests" name="max_guests" type="number" min="1" value="4" required></div>
-          </div>
-          <div class="form-row">
-            <div class="form-field"><label for="ownerPropertyLatitude">Latitude</label><input id="ownerPropertyLatitude" name="latitude" type="number" step="any" placeholder="-1.2676"></div>
-            <div class="form-field"><label for="ownerPropertyLongitude">Longitude</label><input id="ownerPropertyLongitude" name="longitude" type="number" step="any" placeholder="36.8108"></div>
-          </div>
-          <div class="form-field"><label for="ownerPropertyAvailable">Available</label><select id="ownerPropertyAvailable" name="available"><option value="true">Available</option><option value="false">Unavailable</option></select></div>
-          <button class="booking-submit" id="ownerPropertySubmit" type="submit">Submit Property <i class="fa-solid fa-plus"></i></button>
-          <p class="booking-message" id="ownerPropertyMessage" aria-live="polite"></p>
-        </form>
+        <button class="hero-cta property-toggle-button" id="ownerPropertyToggleButton" type="button">Add New Property <i class="fa-solid fa-plus"></i></button>
+        <div class="hero-request-panel property-panel" id="ownerPropertyPanel" hidden>
+          <form class="booking-form owner-property-form" id="ownerPropertyForm">
+            <input type="hidden" name="owner_id" id="ownerPropertyOwner" value="2">
+            <div class="form-row">
+              <div class="form-field"><label for="ownerPropertyName">Property name</label><input id="ownerPropertyName" name="name" type="text" placeholder="Nairobi Garden Apartment" required></div>
+              <div class="form-field"><label for="ownerPropertyLocation">Location</label><input id="ownerPropertyLocation" name="location" type="text" placeholder="Westlands" required></div>
+            </div>
+            <div class="form-row">
+              <div class="form-field"><label for="ownerPropertyCity">City</label><input id="ownerPropertyCity" name="city" type="text" placeholder="Nairobi" required></div>
+              <div class="form-field"><label for="ownerPropertyAccommodation">Accommodation</label><select id="ownerPropertyAccommodation" name="accommodation" required><option value="Apartment">Apartment</option><option value="House">House</option><option value="Villa">Villa</option><option value="Room">Room</option></select></div>
+            </div>
+            <div class="form-row">
+              <div class="form-field"><label for="ownerPropertyRate">Nightly rate</label><input id="ownerPropertyRate" name="nightly_rate" type="number" min="1" placeholder="6500" required></div>
+              <div class="form-field"><label for="ownerPropertyGuests">Max guests</label><input id="ownerPropertyGuests" name="max_guests" type="number" min="1" value="4" required></div>
+            </div>
+            <div class="form-row">
+              <div class="form-field"><label for="ownerPropertyLatitude">Latitude</label><input id="ownerPropertyLatitude" name="latitude" type="number" step="any" placeholder="-1.2676"></div>
+              <div class="form-field"><label for="ownerPropertyLongitude">Longitude</label><input id="ownerPropertyLongitude" name="longitude" type="number" step="any" placeholder="36.8108"></div>
+            </div>
+            <div class="form-field"><label for="ownerPropertyAvailable">Available</label><select id="ownerPropertyAvailable" name="available"><option value="true">Available</option><option value="false">Unavailable</option></select></div>
+            <button class="booking-submit" id="ownerPropertySubmit" type="submit">Submit Property <i class="fa-solid fa-plus"></i></button>
+            <p class="booking-message" id="ownerPropertyMessage" aria-live="polite"></p>
+          </form>
+        </div>
       </div>
 
       <div class="owner-bookings" id="ownerBookings"><p class="recommendation-empty">Loading owner bookings...</p></div>
@@ -123,32 +125,34 @@
       <div class="admin-property-list" id="adminProperties"><p class="recommendation-empty">Loading pending properties...</p></div>
 
       <div class="admin-property-manager">
-        <h3>Add New Listing</h3>
-        <form class="booking-form admin-property-form" id="adminPropertyForm">
-          <div class="form-row">
-            <div class="form-field"><label for="adminPropertyName">Property name</label><input id="adminPropertyName" name="name" type="text" placeholder="Nairobi Garden Apartment" required></div>
-            <div class="form-field"><label for="adminPropertyOwner">Owner ID</label><input id="adminPropertyOwner" name="owner_id" type="number" min="1" value="2" required></div>
-          </div>
-          <div class="form-row">
-            <div class="form-field"><label for="adminPropertyLocation">Location</label><input id="adminPropertyLocation" name="location" type="text" placeholder="Westlands" required></div>
-            <div class="form-field"><label for="adminPropertyCity">City</label><input id="adminPropertyCity" name="city" type="text" placeholder="Nairobi" required></div>
-          </div>
-          <div class="form-row">
-            <div class="form-field"><label for="adminPropertyAccommodation">Accommodation</label><select id="adminPropertyAccommodation" name="accommodation" required><option value="Apartment">Apartment</option><option value="House">House</option><option value="Villa">Villa</option><option value="Room">Room</option></select></div>
-            <div class="form-field"><label for="adminPropertyRate">Nightly rate</label><input id="adminPropertyRate" name="nightly_rate" type="number" min="1" placeholder="6500" required></div>
-          </div>
-          <div class="form-row">
-            <div class="form-field"><label for="adminPropertyGuests">Max guests</label><input id="adminPropertyGuests" name="max_guests" type="number" min="1" value="4" required></div>
-            <div class="form-field"><label for="adminPropertyApproved">Approval</label><select id="adminPropertyApproved" name="approved"><option value="true">Approved</option><option value="false">Pending</option></select></div>
-          </div>
-          <div class="form-row">
-            <div class="form-field"><label for="adminPropertyLatitude">Latitude</label><input id="adminPropertyLatitude" name="latitude" type="number" step="any" placeholder="-1.2676"></div>
-            <div class="form-field"><label for="adminPropertyLongitude">Longitude</label><input id="adminPropertyLongitude" name="longitude" type="number" step="any" placeholder="36.8108"></div>
-          </div>
-          <div class="form-field"><label for="adminPropertyAvailable">Available</label><select id="adminPropertyAvailable" name="available"><option value="true">Available</option><option value="false">Unavailable</option></select></div>
-          <button class="booking-submit" id="adminPropertySubmit" type="submit">Add Listing <i class="fa-solid fa-plus"></i></button>
-          <p class="booking-message" id="adminPropertyMessage" aria-live="polite"></p>
-        </form>
+        <button class="hero-cta property-toggle-button" id="adminPropertyToggleButton" type="button">Add New Listing <i class="fa-solid fa-plus"></i></button>
+        <div class="hero-request-panel property-panel" id="adminPropertyPanel" hidden>
+          <form class="booking-form admin-property-form" id="adminPropertyForm">
+            <div class="form-row">
+              <div class="form-field"><label for="adminPropertyName">Property name</label><input id="adminPropertyName" name="name" type="text" placeholder="Nairobi Garden Apartment" required></div>
+              <div class="form-field"><label for="adminPropertyOwner">Owner ID</label><input id="adminPropertyOwner" name="owner_id" type="number" min="1" value="2" required></div>
+            </div>
+            <div class="form-row">
+              <div class="form-field"><label for="adminPropertyLocation">Location</label><input id="adminPropertyLocation" name="location" type="text" placeholder="Westlands" required></div>
+              <div class="form-field"><label for="adminPropertyCity">City</label><input id="adminPropertyCity" name="city" type="text" placeholder="Nairobi" required></div>
+            </div>
+            <div class="form-row">
+              <div class="form-field"><label for="adminPropertyAccommodation">Accommodation</label><select id="adminPropertyAccommodation" name="accommodation" required><option value="Apartment">Apartment</option><option value="House">House</option><option value="Villa">Villa</option><option value="Room">Room</option></select></div>
+              <div class="form-field"><label for="adminPropertyRate">Nightly rate</label><input id="adminPropertyRate" name="nightly_rate" type="number" min="1" placeholder="6500" required></div>
+            </div>
+            <div class="form-row">
+              <div class="form-field"><label for="adminPropertyGuests">Max guests</label><input id="adminPropertyGuests" name="max_guests" type="number" min="1" value="4" required></div>
+              <div class="form-field"><label for="adminPropertyApproved">Approval</label><select id="adminPropertyApproved" name="approved"><option value="true">Approved</option><option value="false">Pending</option></select></div>
+            </div>
+            <div class="form-row">
+              <div class="form-field"><label for="adminPropertyLatitude">Latitude</label><input id="adminPropertyLatitude" name="latitude" type="number" step="any" placeholder="-1.2676"></div>
+              <div class="form-field"><label for="adminPropertyLongitude">Longitude</label><input id="adminPropertyLongitude" name="longitude" type="number" step="any" placeholder="36.8108"></div>
+            </div>
+            <div class="form-field"><label for="adminPropertyAvailable">Available</label><select id="adminPropertyAvailable" name="available"><option value="true">Available</option><option value="false">Unavailable</option></select></div>
+            <button class="booking-submit" id="adminPropertySubmit" type="submit">Add Listing <i class="fa-solid fa-plus"></i></button>
+            <p class="booking-message" id="adminPropertyMessage" aria-live="polite"></p>
+          </form>
+        </div>
       </div>
 
       <div class="admin-columns"><div><h3>Recent bookings</h3><div class="admin-bookings" id="adminBookings"></div></div><div><h3>Customer-care tickets</h3><div class="admin-tickets" id="adminTickets"></div></div></div>
