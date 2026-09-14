@@ -10,6 +10,7 @@
 
 html {
     scroll-behavior: smooth;
+    scroll-padding-top: 90px;
 }
 
 body {
@@ -278,6 +279,34 @@ a {
     font-size: 20px;
     margin-bottom: 30px;
     color: #e7f3eb;
+}
+
+.hero-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 26px;
+    padding: 18px 30px;
+    background: linear-gradient(135deg, #2f8f5b, #1f6a45);
+    color: #ffffff;
+    border-radius: 14px;
+    font-size: 1.05rem;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+    text-decoration: none;
+    box-shadow: 0 18px 40px rgba(47,143,91,0.35);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.hero-cta:hover {
+    transform: translateY(-2px) scale(1.01);
+    box-shadow: 0 22px 48px rgba(47,143,91,0.4);
+    filter: brightness(1.04);
+}
+
+.hero-cta:active {
+    transform: translateY(0);
 }
 
 /* =========================

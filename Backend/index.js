@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
-const apiApp = require("../backend/server.js");
+const apiApp = require("./server.js");
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -13,21 +13,25 @@ app.use(express.static(projectRoot));
 app.use(apiApp);
 
 app.get("/api/counties", (_request, response) => {
-    response.sendFile(path.join(projectRoot, "counties.json"));
+  response.sendFile(path.join(projectRoot, "counties.json"));
 });
 
 app.get("/api/health", (_request, response) => {
-    response.json({ status: "ok" });
+  response.json({ status: "ok" });
 });
 
 app.get("/admin", (_request, response) => {
-    response.sendFile(path.join(projectRoot, "index.html"));
+  response.sendFile(path.join(projectRoot, "index.html"));
 });
 
 app.get("/{*splat}", (_request, response) => {
-    response.sendFile(path.join(projectRoot, "index.html"));
+  response.sendFile(path.join(projectRoot, "index.html"));
 });
 
-app.listen(port, () => {
+if (require.main === module) {
+  app.listen(port, () => {
     console.log(`KenyaStays is running at http://localhost:${port}`);
-});
+  });
+}
+
+module.exports = app;

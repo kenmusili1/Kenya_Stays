@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const { Pool } = require("pg");
 require("dotenv").config();
 
 const app = express();
@@ -23,6 +24,458 @@ const customerCareStatuses = [
     "RESOLVED",
     "CLOSED"
 ];
+const DATABASE_URL = process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.POSTGRES_CONNECTION_STRING;
+let dbPool = null;
+
+function getDbPool() {
+    if (!DATABASE_URL) {
+        return null;
+    }
+
+    if (!dbPool) {
+        dbPool = new Pool({
+            connectionString: DATABASE_URL,
+            ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false
+        });
+
+        dbPool.on("error", error => {
+            console.error("PostgreSQL pool error:", error);
+        });
+    }
+
+    return dbPool;
+}
+
+async function persistState() {
+    const pool = getDbPool();
+
+    if (!pool) {
+        return;
+    }
+
+    const client = await pool.connect();
+
+    try {
+        await client.query("BEGIN");
+
+        await client.query("DELETE FROM notifications");
+        if (notifications.length > 0) {
+            await client.query(
+                `INSERT INTO notifications (id, user_id, booking_id, title, message, type, is_read, created_at)
+                 VALUES ${notifications.map((_, index) => `($${index * 8 + 1}, $${index * 8 + 2}, $${index * 8 + 3}, $${index * 8 + 4}, $${index * 8 + 5}, $${index * 8 + 6}, $${index * 8 + 7}, $${index * 8 + 8})`).join(", ")}`,
+                notifications.flatMap(notification => [
+                    notification.id,
+                    notification.user_id,
+                    notification.booking_id,
+                    notification.title,
+                    notification.message,
+                    notification.type,
+                    notification.is_read,
+                    notification.created_at
+                ])
+            );
+        }
+
+        await client.query("DELETE FROM payment_requests");
+        if (paymentRequests.length > 0) {
+            await client.query(
+                `INSERT INTO payment_requests (
+                    payment_request_id,
+                    booking_id,
+                    customer_id,
+                    amount,
+                    currency,
+                    provider,
+                    method,
+                    internal_reference,
+                    payhero_reference,
+                    checkout_request_id,
+                    phone_number,
+                    status,
+                    callback_data,
+                    created_at,
+                    updated_at,
+                    refunded_at,
+                    paid_at
+                ) VALUES ${paymentRequests.map((_, index) => `(
+                    $${index * 17 + 1}, $${index * 17 + 2}, $${index * 17 + 3}, $${index * 17 + 4}, $${index * 17 + 5},
+                    $${index * 17 + 6}, $${index * 17 + 7}, $${index * 17 + 8}, $${index * 17 + 9}, $${index * 17 + 10},
+                    $${index * 17 + 11}, $${index * 17 + 12}, $${index * 17 + 13}, $${index * 17 + 14}, $${index * 17 + 15},
+                    $${index * 17 + 16}, $${index * 17 + 17}
+                )`).join(", ")}`,
+                paymentRequests.flatMap(request => [
+                    request.payment_request_id,
+                    request.booking_id,
+                    request.customer_id,
+                    request.amount,
+                    request.currency,
+                    request.provider,
+                    request.method,
+                    request.internal_reference,
+                    request.payhero_reference,
+                    request.checkout_request_id,
+                    request.phone_number,
+                    request.status,
+                    request.callback_data,
+                    request.created_at,
+                    request.updated_at,
+                    request.refunded_at || null,
+                    request.paid_at || null
+                ])
+            );
+        }
+
+        await client.query("DELETE FROM customer_care_messages");
+        if (customerCareMessages.length > 0) {
+            await client.query(
+                `INSERT INTO customer_care_messages (
+                    message_id,
+                    customer_id,
+                    name,
+                    email,
+                    phone,
+                    subject,
+                    message,
+                    status,
+                    assigned_agent,
+                    created_at,
+                    updated_at
+                ) VALUES ${customerCareMessages.map((_, index) => `($${index * 11 + 1}, $${index * 11 + 2}, $${index * 11 + 3}, $${index * 11 + 4}, $${index * 11 + 5}, $${index * 11 + 6}, $${index * 11 + 7}, $${index * 11 + 8}, $${index * 11 + 9}, $${index * 11 + 10}, $${index * 11 + 11})`).join(", ")}`,
+                customerCareMessages.flatMap(message => [
+                    message.message_id,
+                    message.customer_id,
+                    message.name,
+                    message.email,
+                    message.phone,
+                    message.subject,
+                    message.message,
+                    message.status,
+                    message.assigned_agent,
+                    message.created_at,
+                    message.updated_at
+                ])
+            );
+        }
+
+        await client.query("DELETE FROM bookings");
+        if (bookings.length > 0) {
+            await client.query(
+                `INSERT INTO bookings (
+                    booking_id,
+                    customer_id,
+                    property_id,
+                    owner_id,
+                    location,
+                    check_in,
+                    check_out,
+                    guests,
+                    accommodation,
+                    amount,
+                    status,
+                    payment_status,
+                    special_request,
+                    created_at,
+                    updated_at
+                ) VALUES ${bookings.map((_, index) => `($${index * 15 + 1}, $${index * 15 + 2}, $${index * 15 + 3}, $${index * 15 + 4}, $${index * 15 + 5}, $${index * 15 + 6}, $${index * 15 + 7}, $${index * 15 + 8}, $${index * 15 + 9}, $${index * 15 + 10}, $${index * 15 + 11}, $${index * 15 + 12}, $${index * 15 + 13}, $${index * 15 + 14}, $${index * 15 + 15})`).join(", ")}`,
+                bookings.flatMap(booking => [
+                    booking.booking_id,
+                    booking.customer_id,
+                    booking.property_id,
+                    booking.owner_id,
+                    booking.location,
+                    booking.check_in,
+                    booking.check_out,
+                    booking.guests,
+                    booking.accommodation,
+                    booking.amount,
+                    booking.status,
+                    booking.payment_status,
+                    booking.special_request,
+                    booking.created_at,
+                    booking.updated_at
+                ])
+            );
+        }
+
+        await client.query("DELETE FROM properties");
+        if (properties.length > 0) {
+            await client.query(
+                `INSERT INTO properties (
+                    property_id,
+                    owner_id,
+                    approved,
+                    name,
+                    location,
+                    city,
+                    latitude,
+                    longitude,
+                    nightly_rate,
+                    max_guests,
+                    accommodation,
+                    available,
+                    unavailable_dates
+                ) VALUES ${properties.map((_, index) => `($${index * 14 + 1}, $${index * 14 + 2}, $${index * 14 + 3}, $${index * 14 + 4}, $${index * 14 + 5}, $${index * 14 + 6}, $${index * 14 + 7}, $${index * 14 + 8}, $${index * 14 + 9}, $${index * 14 + 10}, $${index * 14 + 11}, $${index * 14 + 12}, $${index * 14 + 13}, $${index * 14 + 14})`).join(", ")}`,
+                properties.flatMap(property => [
+                    property.property_id,
+                    property.owner_id,
+                    property.approved,
+                    property.name,
+                    property.location,
+                    property.city,
+                    property.latitude,
+                    property.longitude,
+                    property.nightly_rate,
+                    property.max_guests,
+                    property.accommodation,
+                    property.available,
+                    JSON.stringify(property.unavailable_dates || [])
+                ])
+            );
+        }
+
+        await client.query("DELETE FROM accounts");
+        if (accounts.length > 0) {
+            await client.query(
+                `INSERT INTO accounts (account_id, name, role, status, approved)
+                 VALUES ${accounts.map((_, index) => `($${index * 5 + 1}, $${index * 5 + 2}, $${index * 5 + 3}, $${index * 5 + 4}, $${index * 5 + 5})`).join(", ")}`,
+                accounts.flatMap(account => [
+                    account.account_id,
+                    account.name,
+                    account.role,
+                    account.status,
+                    account.approved ?? null
+                ])
+            );
+        }
+
+        await client.query("COMMIT");
+    } catch (error) {
+        await client.query("ROLLBACK");
+        console.error("Unable to persist the KenyaStays data to PostgreSQL:", error);
+    } finally {
+        client.release();
+    }
+}
+
+async function initializeDatabase() {
+    const pool = getDbPool();
+
+    if (!pool) {
+        return;
+    }
+
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS accounts (
+            account_id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            role TEXT NOT NULL,
+            status TEXT NOT NULL,
+            approved BOOLEAN
+        );
+
+        CREATE TABLE IF NOT EXISTS properties (
+            property_id INTEGER PRIMARY KEY,
+            owner_id INTEGER NOT NULL,
+            approved BOOLEAN NOT NULL DEFAULT TRUE,
+            name TEXT NOT NULL,
+            location TEXT NOT NULL,
+            city TEXT NOT NULL,
+            latitude DOUBLE PRECISION,
+            longitude DOUBLE PRECISION,
+            nightly_rate DOUBLE PRECISION,
+            max_guests INTEGER,
+            accommodation TEXT,
+            available BOOLEAN,
+            unavailable_dates JSONB DEFAULT '[]'::jsonb
+        );
+
+        CREATE TABLE IF NOT EXISTS bookings (
+            booking_id INTEGER PRIMARY KEY,
+            customer_id INTEGER,
+            property_id INTEGER,
+            owner_id INTEGER,
+            location TEXT NOT NULL,
+            check_in DATE NOT NULL,
+            check_out DATE NOT NULL,
+            guests INTEGER NOT NULL,
+            accommodation TEXT NOT NULL,
+            amount DOUBLE PRECISION,
+            status TEXT NOT NULL,
+            payment_status TEXT NOT NULL,
+            special_request TEXT,
+            created_at TIMESTAMPTZ,
+            updated_at TIMESTAMPTZ
+        );
+
+        CREATE TABLE IF NOT EXISTS notifications (
+            id INTEGER PRIMARY KEY,
+            user_id INTEGER,
+            booking_id INTEGER,
+            title TEXT,
+            message TEXT,
+            type TEXT,
+            is_read BOOLEAN DEFAULT false,
+            created_at TIMESTAMPTZ
+        );
+
+        CREATE TABLE IF NOT EXISTS payment_requests (
+            payment_request_id INTEGER PRIMARY KEY,
+            booking_id INTEGER,
+            customer_id INTEGER,
+            amount DOUBLE PRECISION,
+            currency TEXT,
+            provider TEXT,
+            method TEXT,
+            internal_reference TEXT,
+            payhero_reference TEXT,
+            checkout_request_id TEXT,
+            phone_number TEXT,
+            status TEXT,
+            callback_data TEXT,
+            created_at TIMESTAMPTZ,
+            updated_at TIMESTAMPTZ,
+            refunded_at TIMESTAMPTZ,
+            paid_at TIMESTAMPTZ
+        );
+
+        CREATE TABLE IF NOT EXISTS customer_care_messages (
+            message_id INTEGER PRIMARY KEY,
+            customer_id INTEGER,
+            name TEXT,
+            email TEXT,
+            phone TEXT,
+            subject TEXT,
+            message TEXT,
+            status TEXT,
+            assigned_agent TEXT,
+            created_at TIMESTAMPTZ,
+            updated_at TIMESTAMPTZ
+        );
+    `);
+
+    const accountCount = await pool.query("SELECT COUNT(*)::int AS count FROM accounts");
+    if (accountCount.rows[0].count === 0) {
+        await pool.query(
+            `INSERT INTO accounts (account_id, name, role, status, approved)
+             VALUES ($1, $2, $3, $4, $5), ($6, $7, $8, $9, $10), ($11, $12, $13, $14, $15), ($16, $17, $18, $19, $20)`,
+            [
+                1, "Kennedy Customer", "CUSTOMER", "active", null,
+                2, "KenyaStays Owner", "OWNER", "active", true,
+                3, "KenyaStays Admin", "ADMIN", "active", null,
+                4, "Customer Care Team", "CUSTOMER CARE", "active", null
+            ]
+        );
+    } else {
+        const result = await pool.query("SELECT * FROM accounts ORDER BY account_id");
+        accounts.splice(0, accounts.length, ...result.rows.map(row => ({
+            ...row,
+            approved: row.approved ?? null,
+            account_id: Number(row.account_id)
+        })));
+    }
+
+    const propertyCount = await pool.query("SELECT COUNT(*)::int AS count FROM properties");
+    if (propertyCount.rows[0].count === 0) {
+        await pool.query(
+            `INSERT INTO properties (
+                property_id,
+                owner_id,
+                approved,
+                name,
+                location,
+                city,
+                latitude,
+                longitude,
+                nightly_rate,
+                max_guests,
+                accommodation,
+                available,
+                unavailable_dates
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13), ($14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26), ($27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39), ($40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, $51, $52)`,
+            [
+                1, 2, true, "Modern Apartment - Westlands", "Westlands", "Nairobi", -1.2676, 36.8108, 6500, 4, "Apartment", true, JSON.stringify([]),
+                2, 2, true, "Quiet House - Kilimani", "Kilimani", "Nairobi", -1.2921, 36.7875, 5000, 5, "House", true, JSON.stringify([]),
+                3, 2, true, "Garden Villa - Karen", "Karen", "Nairobi", -1.3197, 36.7073, 8000, 6, "Villa", true, JSON.stringify([]),
+                4, 2, true, "Coastal Studio - Nyali", "Nyali", "Mombasa", -4.0228, 39.7211, 4500, 2, "Room", true, JSON.stringify([])
+            ]
+        );
+    } else {
+        const result = await pool.query("SELECT * FROM properties ORDER BY property_id");
+        properties.splice(0, properties.length, ...result.rows.map(row => ({
+            ...row,
+            approved: row.approved ?? true,
+            property_id: Number(row.property_id),
+            owner_id: Number(row.owner_id),
+            latitude: Number(row.latitude),
+            longitude: Number(row.longitude),
+            nightly_rate: Number(row.nightly_rate),
+            max_guests: Number(row.max_guests),
+            available: row.available ?? true,
+            unavailable_dates: Array.isArray(row.unavailable_dates) ? row.unavailable_dates : []
+        })));
+    }
+
+    const bookingCount = await pool.query("SELECT COUNT(*)::int AS count FROM bookings");
+    if (bookingCount.rows[0].count > 0) {
+        const result = await pool.query("SELECT * FROM bookings ORDER BY booking_id");
+        bookings.splice(0, bookings.length, ...result.rows.map(row => ({
+            ...row,
+            booking_id: Number(row.booking_id),
+            customer_id: row.customer_id == null ? null : Number(row.customer_id),
+            property_id: row.property_id == null ? null : Number(row.property_id),
+            owner_id: row.owner_id == null ? null : Number(row.owner_id),
+            guests: Number(row.guests),
+            amount: row.amount == null ? null : Number(row.amount),
+            created_at: new Date(row.created_at),
+            updated_at: new Date(row.updated_at)
+        })));
+    }
+
+    const notificationCount = await pool.query("SELECT COUNT(*)::int AS count FROM notifications");
+    if (notificationCount.rows[0].count > 0) {
+        const result = await pool.query("SELECT * FROM notifications ORDER BY id");
+        notifications.splice(0, notifications.length, ...result.rows.map(row => ({
+            ...row,
+            id: Number(row.id),
+            user_id: row.user_id == null ? null : Number(row.user_id),
+            booking_id: row.booking_id == null ? null : Number(row.booking_id),
+            is_read: row.is_read ?? false,
+            created_at: new Date(row.created_at)
+        })));
+    }
+
+    const paymentRequestCount = await pool.query("SELECT COUNT(*)::int AS count FROM payment_requests");
+    if (paymentRequestCount.rows[0].count > 0) {
+        const result = await pool.query("SELECT * FROM payment_requests ORDER BY payment_request_id");
+        paymentRequests.splice(0, paymentRequests.length, ...result.rows.map(row => ({
+            ...row,
+            payment_request_id: Number(row.payment_request_id),
+            booking_id: Number(row.booking_id),
+            customer_id: row.customer_id == null ? null : Number(row.customer_id),
+            amount: Number(row.amount),
+            created_at: new Date(row.created_at),
+            updated_at: new Date(row.updated_at),
+            paid_at: row.paid_at ? new Date(row.paid_at) : null,
+            refunded_at: row.refunded_at ? new Date(row.refunded_at) : null
+        })));
+    }
+
+    const customerMessageCount = await pool.query("SELECT COUNT(*)::int AS count FROM customer_care_messages");
+    if (customerMessageCount.rows[0].count > 0) {
+        const result = await pool.query("SELECT * FROM customer_care_messages ORDER BY message_id");
+        customerCareMessages.splice(0, customerCareMessages.length, ...result.rows.map(row => ({
+            ...row,
+            message_id: Number(row.message_id),
+            customer_id: row.customer_id == null ? null : Number(row.customer_id),
+            created_at: new Date(row.created_at),
+            updated_at: new Date(row.updated_at)
+        })));
+    }
+}
+
+initializeDatabase().catch(error => {
+    console.error("Database initialization failed:", error);
+});
 const locationCoordinates = {
     "westlands, nairobi": { latitude: -1.2676, longitude: 36.8108 },
     "kilimani, nairobi": { latitude: -1.2921, longitude: 36.7875 },

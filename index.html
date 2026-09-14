@@ -23,6 +23,20 @@
       <span class="hero-badge"><i class="fa-solid fa-location-dot"></i> EXPLORE KENYA</span>
       <h1>Find Your Perfect <span>Stay in Kenya</span></h1>
       <p>Explore short-term rentals, holiday homes and Airbnb accommodation across Kenya's 47 counties.</p>
+      <div class="hero-cta-wrap">
+        <button class="hero-cta" id="heroRequestButton" type="button">Send Request <i class="fa-solid fa-arrow-right"></i></button>
+        <div class="hero-request-panel" id="heroRequestPanel" hidden>
+          <form class="booking-form hero-booking-form" id="bookingForm">
+            <div class="form-field"><label for="bookingLocation">Location</label><input id="bookingLocation" name="location" type="text" placeholder="Nairobi" required></div>
+            <div class="form-row"><div class="form-field"><label for="checkIn">Check-in</label><input id="checkIn" name="checkIn" type="date" required></div><div class="form-field"><label for="checkOut">Check-out</label><input id="checkOut" name="checkOut" type="date" required></div></div>
+            <div class="form-row"><div class="form-field"><label for="guests">Guests</label><input id="guests" name="guests" type="number" min="1" value="2" required></div><div class="form-field"><label for="accommodation">Accommodation</label><select id="accommodation" name="accommodation" required><option value="Apartment">Apartment</option><option value="House">House</option><option value="Villa">Villa</option><option value="Room">Room</option></select></div></div>
+            <div class="form-field"><label for="specialRequest">Special request</label><textarea id="specialRequest" name="specialRequest" rows="4" placeholder="Tell us anything we should know"></textarea></div>
+            <button class="booking-submit" id="bookingSubmit" type="submit">Send Request <i class="fa-solid fa-arrow-right"></i></button>
+            <p class="booking-message" id="bookingMessage" aria-live="polite"></p>
+            <div class="property-recommendations" id="propertyRecommendations" aria-live="polite"></div>
+          </form>
+        </div>
+      </div>
       <div class="hero-search"><div class="search-box"><i class="fa-solid fa-magnifying-glass"></i><input type="text" id="searchInput" placeholder="Search Nairobi, Mombasa, Nakuru..." aria-label="Search counties"></div><button class="search-button" id="heroSearchButton" type="button">Search</button></div>
       <div class="hero-features"><div><i class="fa-solid fa-map"></i> 47 Counties</div><div><i class="fa-solid fa-house"></i> Short-Term Rentals</div><div><i class="fa-solid fa-compass"></i> Explore Kenya</div></div>
     </div></div></section>
@@ -34,18 +48,6 @@
       <div class="stat-card"><div class="stat-icon"><i class="fa-solid fa-earth-africa"></i></div><div><strong>Kenya</strong><span>Nationwide Directory</span></div></div>
     </div></section>
 
-    <section class="booking-section" id="booking"><div class="container booking-grid">
-      <div class="booking-intro"><span class="section-label">PLAN YOUR VISIT</span><h2>Request a Stay</h2><p>Tell us what you are looking for and we will record your accommodation request.</p></div>
-      <form class="booking-form" id="bookingForm">
-        <div class="form-field"><label for="bookingLocation">Location</label><input id="bookingLocation" name="location" type="text" placeholder="Nairobi" required></div>
-        <div class="form-row"><div class="form-field"><label for="checkIn">Check-in</label><input id="checkIn" name="checkIn" type="date" required></div><div class="form-field"><label for="checkOut">Check-out</label><input id="checkOut" name="checkOut" type="date" required></div></div>
-        <div class="form-row"><div class="form-field"><label for="guests">Guests</label><input id="guests" name="guests" type="number" min="1" value="2" required></div><div class="form-field"><label for="accommodation">Accommodation</label><select id="accommodation" name="accommodation" required><option value="Apartment">Apartment</option><option value="House">House</option><option value="Villa">Villa</option><option value="Room">Room</option></select></div></div>
-        <div class="form-field"><label for="specialRequest">Special request</label><textarea id="specialRequest" name="specialRequest" rows="4" placeholder="Tell us anything we should know"></textarea></div>
-        <button class="booking-submit" id="bookingSubmit" type="submit">Send Request <i class="fa-solid fa-arrow-right"></i></button>
-        <p class="booking-message" id="bookingMessage" aria-live="polite"></p>
-        <div class="property-recommendations" id="propertyRecommendations" aria-live="polite"></div>
-      </form>
-    </div></section>
 
     <aside class="route-tray" id="routeTray" aria-live="polite" hidden>
       <div class="route-tray-header">

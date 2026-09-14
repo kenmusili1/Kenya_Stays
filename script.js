@@ -36,6 +36,12 @@ const navigation =
 const heroSearchButton =
     document.getElementById("heroSearchButton");
 
+const heroRequestButton =
+    document.getElementById("heroRequestButton");
+
+const heroRequestPanel =
+    document.getElementById("heroRequestPanel");
+
 const bookingForm =
     document.getElementById("bookingForm");
 
@@ -992,6 +998,20 @@ if (heroSearchButton) {
         }
     );
 
+}
+
+if (heroRequestButton && heroRequestPanel) {
+    heroRequestButton.addEventListener("click", () => {
+        const isHidden = heroRequestPanel.hasAttribute("hidden");
+        heroRequestPanel.hidden = !isHidden;
+
+        if (!heroRequestPanel.hidden) {
+            const firstInput = heroRequestPanel.querySelector("input, select, textarea");
+            if (firstInput) {
+                firstInput.focus();
+            }
+        }
+    });
 }
 
 if (bookingForm) {
