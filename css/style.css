@@ -78,6 +78,15 @@ a {
     place-items: center;
 }
 
+.logo-icon-image {
+    width: 42px;
+    height: 42px;
+    object-fit: cover;
+    border-radius: 12px;
+    display: block;
+    flex-shrink: 0;
+}
+
 .navigation {
     display: flex;
     gap: 30px;
