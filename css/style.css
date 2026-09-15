@@ -59,9 +59,14 @@ a {
 .logo {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     font-size: 24px;
     font-weight: 800;
+    white-space: nowrap;
+}
+
+.logo-text {
+    color: #173b2f;
 }
 
 .logo-highlight {
@@ -89,8 +94,9 @@ a {
 
 .navigation {
     display: flex;
-    gap: 30px;
+    gap: 20px;
     align-items: center;
+    flex-wrap: wrap;
 }
 
 .navigation a {
@@ -99,7 +105,8 @@ a {
     transition: 0.3s;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+    white-space: nowrap;
 }
 
 .navigation a:hover {
