@@ -63,6 +63,9 @@ const customerCareMessage =
 const customerCareSubmit =
     document.getElementById("customerCareSubmit");
 
+const customerCareToggle =
+    document.getElementById("customerCareToggle");
+
 const ownerSummary =
     document.getElementById("ownerSummary");
 
@@ -1240,6 +1243,21 @@ if (customerCareForm) {
         submitCustomerCareMessage
     );
 
+}
+
+if (customerCareToggle && customerCareForm) {
+    customerCareToggle.addEventListener("click", () => {
+        const isHidden = customerCareForm.classList.toggle("hidden");
+        customerCareToggle.setAttribute("aria-expanded", String(!isHidden));
+        customerCareToggle.innerHTML = isHidden
+            ? 'Send Request <i class="fa-solid fa-chevron-down"></i>'
+            : 'Hide Details <i class="fa-solid fa-chevron-up"></i>';
+
+        if (!isHidden) {
+            const firstField = customerCareForm.querySelector("input, textarea");
+            firstField?.focus();
+        }
+    });
 }
 
 if (ownerDashboardRefresh) {

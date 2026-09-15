@@ -757,6 +757,11 @@ a {
     align-items: start;
 }
 
+.customer-care-panel {
+    display: grid;
+    gap: 18px;
+}
+
 .customer-care-intro h2 {
     font-size: 46px;
     line-height: 1.1;
@@ -771,12 +776,15 @@ a {
 .customer-rating-wrap {
     display: grid;
     gap: 10px;
-    margin-bottom: 18px;
+    margin-bottom: 8px;
 }
 
-.customer-rating-wrap label {
+.customer-rating-label {
     font-weight: 700;
     color: #173b2f;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 13px;
 }
 
 .customer-rating {
@@ -803,6 +811,16 @@ a {
 .customer-rating label:hover ~ label {
     color: #f4b740;
     transform: translateY(-1px);
+}
+
+.customer-care-toggle {
+    width: fit-content;
+    min-width: 180px;
+    justify-self: start;
+}
+
+.customer-care-form.hidden {
+    display: none;
 }
 
 /* =========================

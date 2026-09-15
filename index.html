@@ -182,13 +182,9 @@
 
     <section class="customer-care-section" id="customer-care"><div class="container customer-care-grid">
       <div class="customer-care-intro"><span class="section-label">CUSTOMER CARE CENTER</span><h2>Share your suggestion</h2><p>Tell us about your experience, share ideas to improve our service, and help us make your stay even better.</p></div>
-      <form class="booking-form" id="customerCareForm">
-        <div class="form-row"><div class="form-field"><label for="customerName">Name</label><input id="customerName" name="name" type="text" autocomplete="name" required></div><div class="form-field"><label for="customerEmail">Email</label><input id="customerEmail" name="email" type="email" autocomplete="email" required></div></div>
-        <div class="form-field"><label for="customerPhone">Phone</label><input id="customerPhone" name="phone" type="tel" autocomplete="tel" required></div>
-        <div class="form-field"><label for="customerSubject">Subject</label><input id="customerSubject" name="subject" type="text" placeholder="Accommodation in Nairobi" required></div>
-        <div class="form-field"><label for="customerMessage">Suggestion</label><textarea id="customerMessage" name="message" rows="5" placeholder="Tell us your suggestion or feedback" required></textarea></div>
+      <div class="customer-care-panel">
         <div class="customer-rating-wrap">
-          <label>Rate our website</label>
+          <label class="customer-rating-label">Rate Us</label>
           <div class="customer-rating" aria-label="Website rating">
             <input type="radio" id="websiteRating5" name="websiteRating" value="5"><label for="websiteRating5" title="5 stars">★</label>
             <input type="radio" id="websiteRating4" name="websiteRating" value="4"><label for="websiteRating4" title="4 stars">★</label>
@@ -197,9 +193,16 @@
             <input type="radio" id="websiteRating1" name="websiteRating" value="1"><label for="websiteRating1" title="1 star">★</label>
           </div>
         </div>
-        <button class="booking-submit" id="customerCareSubmit" type="submit">Send Message <i class="fa-solid fa-paper-plane"></i></button>
-        <p class="booking-message" id="customerCareMessage" aria-live="polite"></p>
-      </form>
+        <button class="booking-submit customer-care-toggle" id="customerCareToggle" type="button" aria-expanded="false">Send Request <i class="fa-solid fa-chevron-down"></i></button>
+        <form class="booking-form customer-care-form hidden" id="customerCareForm">
+          <div class="form-row"><div class="form-field"><label for="customerName">Name</label><input id="customerName" name="name" type="text" autocomplete="name" required></div><div class="form-field"><label for="customerEmail">Email</label><input id="customerEmail" name="email" type="email" autocomplete="email" required></div></div>
+          <div class="form-field"><label for="customerPhone">Phone</label><input id="customerPhone" name="phone" type="tel" autocomplete="tel" required></div>
+          <div class="form-field"><label for="customerSubject">Subject</label><input id="customerSubject" name="subject" type="text" placeholder="Accommodation in Nairobi" required></div>
+          <div class="form-field"><label for="customerMessage">Suggestion</label><textarea id="customerMessage" name="message" rows="5" placeholder="Tell us your suggestion or feedback" required></textarea></div>
+          <button class="booking-submit" id="customerCareSubmit" type="submit">Send Message <i class="fa-solid fa-paper-plane"></i></button>
+          <p class="booking-message" id="customerCareMessage" aria-live="polite"></p>
+        </form>
+      </div>
     </div></section>
   </main>
 
