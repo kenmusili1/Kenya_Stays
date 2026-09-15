@@ -768,6 +768,43 @@ a {
     color: #71827a;
 }
 
+.customer-rating-wrap {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+.customer-rating-wrap label {
+    font-weight: 700;
+    color: #173b2f;
+}
+
+.customer-rating {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    gap: 6px;
+    font-size: 28px;
+    line-height: 1;
+}
+
+.customer-rating input {
+    display: none;
+}
+
+.customer-rating label {
+    color: #d9e3dc;
+    cursor: pointer;
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.customer-rating input:checked ~ label,
+.customer-rating label:hover,
+.customer-rating label:hover ~ label {
+    color: #f4b740;
+    transform: translateY(-1px);
+}
+
 /* =========================
    OWNER DASHBOARD
 ========================= */
