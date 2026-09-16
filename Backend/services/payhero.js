@@ -1,3 +1,4 @@
+
 const PAYHERO_BASE_URL =
     process.env.PAYHERO_BASE_URL || "https://backend.payhero.co.ke/api/v2";
 
@@ -17,20 +18,48 @@ function getAuthorizationHeader() {
 }
 
 async function payHeroRequest(endpoint, options = {}) {
-    const response = await fetch(`${PAYHERO_BASE_URL}${endpoint}`, {
-        ...options,
-        headers: {
-            Authorization: getAuthorizationHeader(),
-            "Content-Type": "application/json",
-            ...(options.headers || {})
-        }
-    });
+    const url = `${PAYHERO_BASE_URL}${endpoint}`;
 
-    const contentType = response.headers.get("content-type") || "";
+    let response;
 
-    const data = contentType.includes("application/json")
-        ? await response.json()
-        : await response.text();
+    try {
+        response = await fetch(url, {
+            ...options,
+            headers: {
+                Authorization: getAuthorizationHeader(),
+                "Content-Type": "application/json",
+                ...(options.headers || {})
+            }
+        });
+    } catch (error) {
+        const networkError = new Error(
+            `Unable to reach Pay Hero: ${error.message}`
+        );
+
+        networkError.code = error.cause?.code || null;
+        networkError.cause = error.cause || null;
+        networkError.url = url;
+
+        console.error("Pay Hero network error:", {
+            message: error.message,
+            code: error.cause?.code,
+            cause: error.cause?.message,
+            hostname: error.cause?.hostname,
+            address: error.cause?.address,
+            port: error.cause?.port,
+            url
+        });
+
+        throw networkError;
+    }
+
+    const contentType =
+        response.headers.get("content-type") || "";
+
+    const data =
+        contentType.includes("application/json")
+            ? await response.json()
+            : await response.text();
 
     if (!response.ok) {
         const error = new Error(

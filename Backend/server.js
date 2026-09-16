@@ -1,12 +1,14 @@
-const {
-    payHeroRequest,
-    initiateMpesaStkPush
-} = require("./services/payhero");
+
 
 
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
+
+const {
+    payHeroRequest,
+    initiateMpesaStkPush
+} = require("./services/payhero");
 
 
 validatePayHeroConfiguration();
@@ -23,6 +25,19 @@ const accounts = [
 ];
 const notifications = [];
 const paymentRequests = [];
+
+//Payment statuses
+const PAYMENT_STATUSES = Object.freeze({
+    PENDING: "PENDING",
+    STK_INITIATED: "STK_INITIATED",
+    PROCESSING: "PROCESSING",
+    SUCCESS: "SUCCESS",
+    FAILED: "FAILED",
+    CANCELLED: "CANCELLED",
+    REFUNDED: "REFUNDED"
+});
+
+
 const customerCareMessages = [];
 const customerCareStatuses = [
     "NEW",
@@ -102,16 +117,8 @@ const properties = [
     }
 ];
 
-//Payment statuses
-const PAYMENT_STATUSES = Object.freeze({
-    PENDING: "PENDING",
-    STK_INITIATED: "STK_INITIATED",
-    PROCESSING: "PROCESSING",
-    SUCCESS: "SUCCESS",
-    FAILED: "FAILED",
-    CANCELLED: "CANCELLED",
-    REFUNDED: "REFUNDED"
-});
+
+
 
 function calculateDistanceInKilometres(first, second) {
 
@@ -185,6 +192,217 @@ function createNotification({ userId, title, message, type, bookingId = null }) 
 
 }
 
+
+
+function updatePaymentStatus(paymentRequest, status) {
+    if (!paymentRequest) {
+        return false;
+    }
+
+    paymentRequest.status = status;
+    paymentRequest.updated_at = new Date();
+
+    return true;
+}
+
+
+function createPaymentRequest({
+    booking,
+    amount
+}) {
+
+    const now =
+        new Date();
+
+    const paymentRequestId =
+        paymentRequests.length + 1;
+
+    const internalReference =
+        `KS-${booking.booking_id}-${Date.now()}-${paymentRequestId}`;
+
+    const paymentRequest = {
+        payment_request_id:
+            paymentRequestId,
+
+        booking_id:
+            booking.booking_id,
+
+        customer_id:
+            booking.customer_id,
+
+        amount:
+            Number(amount),
+
+        currency:
+            "KES",
+
+        method:
+            null,
+
+        provider:
+            "PAYHERO",
+
+        internal_reference:
+            internalReference,
+
+        payhero_reference:
+            null,
+
+        checkout_request_id:
+            null,
+
+        payhero_transaction_id:
+            null,
+
+        status:
+            PAYMENT_STATUSES.PENDING,
+
+        phone_number:
+            null,
+
+        callback_data:
+            null,
+
+        payhero_status:
+            null,
+
+        result_code:
+            null,
+
+        result_description:
+            null,
+
+        created_at:
+            now,
+
+        updated_at:
+            now
+    };
+
+    paymentRequests.push(
+        paymentRequest
+    );
+
+    return paymentRequest;
+}
+
+
+function markPaymentSuccessful(
+    paymentRequest
+) {
+
+    if (!paymentRequest) {
+
+        return {
+            success: false,
+            message:
+                "Payment request not found."
+        };
+    }
+
+    if (
+        paymentRequest.status ===
+        PAYMENT_STATUSES.SUCCESS
+    ) {
+
+        return {
+            success: true,
+            alreadyProcessed: true,
+            message:
+                "Payment was already processed."
+        };
+    }
+
+    const booking =
+        bookings.find(
+            item =>
+                item.booking_id ===
+                paymentRequest.booking_id
+        );
+
+    if (!booking) {
+
+        return {
+            success: false,
+            message:
+                "Booking associated with payment was not found."
+        };
+    }
+
+    const now =
+        new Date();
+
+    paymentRequest.status =
+        PAYMENT_STATUSES.SUCCESS;
+
+    paymentRequest.paid_at =
+        now;
+
+    paymentRequest.updated_at =
+        now;
+
+    booking.payment_status =
+        "paid";
+
+    booking.status =
+        "confirmed";
+
+    booking.updated_at =
+        now;
+
+    createNotification({
+
+        userId:
+            booking.customer_id,
+
+        title:
+            "Payment successful",
+
+        message:
+            `Payment for booking #${booking.booking_id} was successful.`,
+
+        type:
+            "payment_successful",
+
+        bookingId:
+            booking.booking_id
+    });
+
+    createNotification({
+
+        userId:
+            booking.owner_id,
+
+        title:
+            "Booking confirmed",
+
+        message:
+            `Booking #${booking.booking_id} has been confirmed after successful payment.`,
+
+        type:
+            "booking_confirmed",
+
+        bookingId:
+            booking.booking_id
+    });
+
+    return {
+        success: true,
+        alreadyProcessed: false,
+        booking,
+        paymentRequest
+    };
+}
+
+function findPaymentRequestByBookingId(bookingId) {
+    return paymentRequests.find(
+        paymentRequest =>
+            paymentRequest.booking_id ===
+            Number(bookingId)
+    );
+}
+
+
 function isAdmin(request) {
 
     const body = request.body || {};
@@ -219,14 +437,11 @@ function validatePayHeroConfiguration() {
 }
 
 // Phone number normalization for Kenyan M-Pesa format
-function normalizeKenyanPhoneNumber(
-    phoneNumber
-) {
-    const cleaned =
-        String(phoneNumber || "")
-            .trim()
-            .replace(/\s+/g, "")
-            .replace(/-/g, "");
+function normalizeKenyanPhoneNumber(phoneNumber) {
+    const cleaned = String(phoneNumber || "")
+        .trim()
+        .replace(/\s+/g, "")
+        .replace(/-/g, "");
 
     if (!cleaned) {
         return null;
@@ -251,18 +466,7 @@ function normalizeKenyanPhoneNumber(
     return null;
 }
 
-// Find a payment request by its internal or Pay Hero reference
-function findPaymentRequestByReference(reference) {
-    if (!reference) {
-        return null;
-    }
 
-    return paymentRequests.find(
-        paymentRequest =>
-            paymentRequest.payhero_reference === reference ||
-            paymentRequest.internal_reference === reference
-    );
-}
 
 
 // Normalize Pay Hero callback data to a consistent format
@@ -310,6 +514,19 @@ function normalizePayHeroCallback(callbackData) {
             response.transaction_id ||
             null
     };
+}
+
+// Find a payment request by its internal or Pay Hero reference
+function findPaymentRequestByReference(reference) {
+    if (!reference) {
+        return null;
+    }
+
+    return paymentRequests.find(
+        paymentRequest =>
+            paymentRequest.payhero_reference === reference ||
+            paymentRequest.internal_reference === reference
+    );
 }
 
 // Validate that a Pay Hero payment was successful and matches the expected payment request
@@ -369,6 +586,127 @@ function validateSuccessfulPayHeroPayment(
 
     return {
         valid: true
+    };
+}
+
+
+function processPayHeroCallback(
+    callbackData
+) {
+
+    const normalized =
+        normalizePayHeroCallback(
+            callbackData
+        );
+
+    if (!normalized) {
+
+        return {
+            success: false,
+            processed: false,
+            message:
+                "Invalid Pay Hero callback."
+        };
+    }
+
+    const paymentRequest =
+        findPaymentRequestByReference(
+            normalized.externalReference
+        );
+
+    if (!paymentRequest) {
+
+        console.error(
+            "Pay Hero callback could not be matched:",
+            normalized.externalReference
+        );
+
+        return {
+            success: false,
+            processed: false,
+            message:
+                "Payment request could not be matched."
+        };
+    }
+
+    paymentRequest.callback_data =
+        callbackData;
+
+    paymentRequest.updated_at =
+        new Date();
+
+    paymentRequest.payhero_transaction_id =
+        normalized.transactionId;
+
+    paymentRequest.checkout_request_id =
+        normalized.checkoutRequestId ||
+        paymentRequest.checkout_request_id;
+
+    paymentRequest.payhero_status =
+        normalized.status ||
+        null;
+
+    paymentRequest.result_code =
+        normalized.resultCode;
+
+    paymentRequest.result_description =
+        normalized.resultDescription;
+
+    if (
+        paymentRequest.status ===
+        PAYMENT_STATUSES.SUCCESS
+    ) {
+
+        return {
+            success: true,
+            processed: false,
+            alreadyProcessed: true,
+            message:
+                "Payment callback was already processed."
+        };
+    }
+
+    const validation =
+        validateSuccessfulPayHeroPayment(
+            paymentRequest,
+            normalized
+        );
+
+    if (!validation.valid) {
+
+        paymentRequest.status =
+            PAYMENT_STATUSES.FAILED;
+
+        paymentRequest.updated_at =
+            new Date();
+
+        return {
+            success: false,
+            processed: false,
+            message:
+                validation.message
+        };
+    }
+
+    const result =
+        markPaymentSuccessful(
+            paymentRequest
+        );
+
+    return {
+
+        success:
+            result.success,
+
+        processed:
+            !result.alreadyProcessed,
+
+        alreadyProcessed:
+            result.alreadyProcessed ||
+            false,
+
+        message:
+            result.message
     };
 }
 
@@ -599,6 +937,7 @@ app.post("/api/properties/recommendations", (req, res) => {
 
 });
 
+
 app.post("/api/bookings", (req, res) => {
 
     const {
@@ -607,89 +946,335 @@ app.post("/api/bookings", (req, res) => {
         checkOut,
         guests,
         accommodation,
-        specialRequest = ""
+        specialRequest = "",
+        property_id
     } = req.body;
 
-    if (!location || !checkIn || !checkOut || !guests || !accommodation) {
 
+    /* ================= BASIC VALIDATION ================= */
+
+    if (
+        !location ||
+        !checkIn ||
+        !checkOut ||
+        !guests ||
+        !accommodation ||
+        !property_id
+    ) {
         return res.status(400).json({
             success: false,
-            message: "Location, dates, guests, and accommodation are required."
+            message:
+                "Location, dates, guests, accommodation, and property are required."
         });
-
     }
 
-    if (new Date(checkOut) <= new Date(checkIn)) {
 
+    if (
+        new Date(checkOut) <=
+        new Date(checkIn)
+    ) {
         return res.status(400).json({
             success: false,
-            message: "Check-out must be after check-in."
+            message:
+                "Check-out must be after check-in."
         });
-
     }
+
+
+    const guestCount =
+        Number(guests);
+
+
+    if (
+        !Number.isInteger(guestCount) ||
+        guestCount < 1
+    ) {
+        return res.status(400).json({
+            success: false,
+            message:
+                "Guests must be a whole number greater than zero."
+        });
+    }
+
+
+    /* ================= PROPERTY VALIDATION ================= */
+
+    const selectedProperty =
+        properties.find(
+            property =>
+                property.property_id ===
+                    Number(property_id) &&
+                property.approved === true &&
+                property.available === true
+        );
+
+
+    if (!selectedProperty) {
+        return res.status(400).json({
+            success: false,
+            message:
+                "The selected property is not available."
+        });
+    }
+
+
+    if (
+        selectedProperty.max_guests <
+        guestCount
+    ) {
+        return res.status(400).json({
+            success: false,
+            message:
+                "The selected property cannot accommodate this number of guests."
+        });
+    }
+
+
+    if (
+        datesOverlap(
+            checkIn,
+            checkOut,
+            selectedProperty.unavailable_dates
+        )
+    ) {
+        return res.status(409).json({
+            success: false,
+            message:
+                "The selected property is not available for those dates."
+        });
+    }
+
+
+    /* ================= SERVER-SIDE PRICE ================= */
+
+    const nights =
+        calculateNights(
+            checkIn,
+            checkOut
+        );
+
+
+    if (!Number.isInteger(nights) || nights <= 0) {
+        return res.status(400).json({
+            success: false,
+            message:
+                "The selected stay dates are invalid."
+        });
+    }
+
+
+    const calculatedAmount =
+        Number(
+            (
+                nights *
+                Number(selectedProperty.nightly_rate)
+            ).toFixed(2)
+        );
+
+
+    if (
+        !Number.isFinite(calculatedAmount) ||
+        calculatedAmount <= 0
+    ) {
+        return res.status(500).json({
+            success: false,
+            message:
+                "Unable to calculate the booking amount."
+        });
+    }
+
+
+    /* ================= CREATE BOOKING ================= */
 
     const now = new Date();
+
     const booking = {
-        booking_id: bookings.length + 1,
-        customer_id: req.body.customer_id || null,
-        property_id: req.body.property_id || null,
-        owner_id: req.body.owner_id || null,
-        location: String(location).trim(),
-        check_in: checkIn,
-        check_out: checkOut,
-        guests: Number(guests),
-        accommodation,
-        amount: null,
-        status: "pending",
-        payment_status: "unpaid",
-        special_request: String(specialRequest).trim(),
-        created_at: now,
-        updated_at: now
+        booking_id:
+            bookings.length + 1,
+
+        customer_id:
+            req.body.customer_id || null,
+
+        property_id:
+            selectedProperty.property_id,
+
+        owner_id:
+            selectedProperty.owner_id,
+
+        location:
+            String(location).trim(),
+
+        check_in:
+            checkIn,
+
+        check_out:
+            checkOut,
+
+        guests:
+            guestCount,
+
+        accommodation:
+            accommodation,
+
+        amount:
+            calculatedAmount,
+
+        status:
+            "pending",
+
+        payment_status:
+            "pending",
+
+        special_request:
+            String(specialRequest).trim(),
+
+        created_at:
+            now,
+
+        updated_at:
+            now
     };
 
-    if (!Number.isInteger(booking.guests) || booking.guests < 1) {
-
-        return res.status(400).json({
-            success: false,
-            message: "Guests must be a whole number greater than zero."
-        });
-
-    }
-
-    const propertyMatches = findPropertyRecommendations({
-        location: booking.location,
-        checkIn: booking.check_in,
-        checkOut: booking.check_out,
-        guests: booking.guests,
-        accommodation: booking.accommodation
-    });
-
-    const recommendedProperty = propertyMatches.recommendations[0];
-    booking.property_id = req.body.property_id || recommendedProperty?.property_id || null;
-    booking.owner_id = req.body.owner_id || recommendedProperty?.owner_id || null;
-    booking.amount = recommendedProperty?.total_amount || null;
 
     bookings.push(booking);
 
-    const ownerNotification = booking.owner_id
-        ? createNotification({
-            userId: booking.owner_id,
-            title: "New booking request",
-            message: `A customer has requested your ${booking.accommodation.toLowerCase()} in ${booking.location}.`,
-            type: "booking_request",
-            bookingId: booking.booking_id
-        })
-        : null;
+
+    /* ================= PAYMENT REQUEST ================= */
+
+    const paymentRequest =
+        createPaymentRequest({
+            booking,
+            amount:booking.amount
+        });
+
+
+    /* ================= OWNER NOTIFICATION ================= */
+
+    const ownerNotification =
+        booking.owner_id
+            ? createNotification({
+                userId:
+                    booking.owner_id,
+
+                title:
+                    "New booking request",
+
+                message:
+                    `A customer has requested your ${booking.accommodation.toLowerCase()} in ${booking.location}.`,
+
+                type:
+                    "booking_request",
+
+                bookingId:
+                    booking.booking_id
+            })
+            : null;
+
+
+    /* ================= CUSTOMER NOTIFICATION ================= */
+
+    createNotification({
+        userId:
+            booking.customer_id,
+
+        title:
+            "Booking submitted",
+
+        message:
+            `Booking #${booking.booking_id} has been submitted. Please complete payment to confirm your reservation.`,
+
+        type:
+            "booking_submitted",
+
+        bookingId:
+            booking.booking_id
+    });
+
+
+    /* ================= RESPONSE ================= */
 
     return res.status(201).json({
         success: true,
-        message: "Stay request received.",
+
+        message:
+            "Booking submitted. Please complete payment.",
+
         booking,
-        recommendations: propertyMatches.recommendations,
-        notification: ownerNotification
+
+        payment_request: {
+            payment_request_id:
+                paymentRequest.payment_request_id,
+
+            booking_id:
+                paymentRequest.booking_id,
+
+            amount:
+                paymentRequest.amount,
+
+            currency:
+                paymentRequest.currency,
+
+            provider:
+                paymentRequest.provider,
+
+            method:
+                paymentRequest.method,
+
+            status:
+                paymentRequest.status,
+
+            reference:
+                paymentRequest.internal_reference
+        },
+
+        recommendations:
+            findPropertyRecommendations({
+                location,
+                checkIn,
+                checkOut,
+                guests: guestCount,
+                accommodation
+            }).recommendations,
+
+        notification:
+            ownerNotification
     });
 
 });
+
+
+
+app.post(
+    "/api/payments/payhero/callback",
+    async (req, res) => {
+
+        try {
+
+            const result =
+                processPayHeroCallback(
+                    req.body
+                );
+
+            return res.status(200).json(
+                result
+            );
+
+        } catch (error) {
+
+            console.error(
+                "Pay Hero callback processing error:",
+                error.message
+            );
+
+            return res.status(500).json({
+                success: false,
+                message:
+                    "Callback processing failed."
+            });
+        }
+    }
+);
+
 
 app.get("/api/owners/:ownerId/dashboard", (req, res) => {
 
@@ -757,42 +1342,29 @@ app.patch("/api/owners/:ownerId/bookings/:bookingId", (req, res) => {
 
     if (action === "accept") {
 
-        booking.payment_status = "pending";
+        booking.updated_at =
+            new Date();
+
         createNotification({
-            userId: booking.customer_id,
-            title: "Booking accepted",
-            message: "Your accommodation request was accepted. Please complete payment to confirm your reservation.",
-            type: "booking_accepted",
-            bookingId: booking.booking_id
+
+            userId:
+                booking.customer_id,
+
+            title:
+                "Booking accepted",
+
+            message:
+                "Your accommodation request was accepted.",
+
+            type:
+                "booking_accepted",
+
+            bookingId:
+                booking.booking_id
         });
-        paymentRequests.push({
-                payment_request_id: paymentRequests.length + 1,
-
-                booking_id: booking.booking_id,
-                customer_id: booking.customer_id,
-
-                amount: Number(booking.amount),
-                currency: "KES",
-
-                provider: null,
-                method: null,
-
-                internal_reference: `KS-PAY-${Date.now()}-${booking.booking_id}`,
-
-                payhero_reference: null,
-                checkout_request_id: null,
-
-                phone_number: null,
-
-                status: PAYMENT_STATUSES.PENDING,
-
-                callback_data: null,
-
-                created_at: now,
-                updated_at: now
-        });
-
     }
+
+
 
     return res.json({
         success: true,
@@ -841,77 +1413,225 @@ app.patch("/api/notifications/:notificationId/read", (req, res) => {
 
 });
 
-/*app.post("/api/payments/:paymentRequestId/confirm", (req, res) => {
+app.post(
+    "/api/payments/:paymentRequestId/confirm",
+    (_req, res) => {
 
-    const paymentRequest = paymentRequests.find(item => item.payment_request_id === Number(req.params.paymentRequestId));
-    const supportedMethods = ["mpesa", "card", "bank_transfer"];
-    const method = String(req.body.method || "").toLowerCase();
-
-    if (!paymentRequest) {
-
-        return res.status(404).json({
+        return res.status(410).json({
             success: false,
-            message: "Payment request not found."
+
+            message:
+                "Direct payment confirmation is disabled. Payments must be confirmed by Pay Hero callback verification."
         });
 
     }
+);
 
-    if (!supportedMethods.includes(method)) {
 
-        return res.status(400).json({
-            success: false,
-            message: "Payment method must be mpesa, card, or bank_transfer."
+app.get(
+    "/api/bookings/:bookingId/payment",
+    (req, res) => {
+
+        const bookingId =
+            Number(req.params.bookingId);
+
+
+        if (
+            !Number.isInteger(bookingId) ||
+            bookingId <= 0
+        ) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    "Invalid booking ID."
+            });
+        }
+
+
+        const booking =
+            bookings.find(
+                item =>
+                    item.booking_id ===
+                    bookingId
+            );
+
+
+        if (!booking) {
+            return res.status(404).json({
+                success: false,
+                message:
+                    "Booking not found."
+            });
+        }
+
+
+        const paymentRequest =
+            findPaymentRequestByBookingId(
+                bookingId
+            );
+
+
+        if (!paymentRequest) {
+            return res.status(404).json({
+                success: false,
+                message:
+                    "No payment request exists for this booking."
+            });
+        }
+
+
+        return res.json({
+            success: true,
+
+            payment: {
+                payment_request_id:
+                    paymentRequest.payment_request_id,
+
+                booking_id:
+                    paymentRequest.booking_id,
+
+                amount:
+                    paymentRequest.amount,
+
+                currency:
+                    paymentRequest.currency,
+
+                provider:
+                    paymentRequest.provider,
+
+                method:
+                    paymentRequest.method,
+
+                status:
+                    paymentRequest.status,
+
+                reference:
+                    paymentRequest.internal_reference,
+
+                payhero_reference:
+                    paymentRequest.payhero_reference,
+
+                checkout_request_id:
+                    paymentRequest.checkout_request_id,
+
+                transaction_id:
+                    paymentRequest.payhero_transaction_id,
+
+                result_description:
+                    paymentRequest.result_description,
+
+                created_at:
+                    paymentRequest.created_at,
+
+                updated_at:
+                    paymentRequest.updated_at,
+
+                paid_at:
+                    paymentRequest.paid_at
+            }
         });
 
     }
+);
 
-    if (paymentRequest.status === "PAID") {
 
-        return res.status(409).json({
-            success: false,
-            message: "Payment has already been confirmed."
+app.get(
+    "/api/payments/:paymentRequestId",
+    (req, res) => {
+
+        const paymentRequestId =
+            Number(
+                req.params.paymentRequestId
+            );
+
+
+        if (
+            !Number.isInteger(
+                paymentRequestId
+            ) ||
+            paymentRequestId <= 0
+        ) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    "Invalid payment request ID."
+            });
+        }
+
+
+        const paymentRequest =
+            paymentRequests.find(
+                item =>
+                    item.payment_request_id ===
+                    paymentRequestId
+            );
+
+
+        if (!paymentRequest) {
+            return res.status(404).json({
+                success: false,
+                message:
+                    "Payment request not found."
+            });
+        }
+
+
+        return res.json({
+            success: true,
+
+            payment: {
+                payment_request_id:
+                    paymentRequest.payment_request_id,
+
+                booking_id:
+                    paymentRequest.booking_id,
+
+                amount:
+                    paymentRequest.amount,
+
+                currency:
+                    paymentRequest.currency,
+
+                provider:
+                    paymentRequest.provider,
+
+                method:
+                    paymentRequest.method,
+
+                status:
+                    paymentRequest.status,
+
+                reference:
+                    paymentRequest.internal_reference,
+
+                payhero_reference:
+                    paymentRequest.payhero_reference,
+
+                checkout_request_id:
+                    paymentRequest.checkout_request_id,
+
+                transaction_id:
+                    paymentRequest.payhero_transaction_id,
+
+                result_description:
+                    paymentRequest.result_description,
+
+                created_at:
+                    paymentRequest.created_at,
+
+                updated_at:
+                    paymentRequest.updated_at,
+
+                paid_at:
+                    paymentRequest.paid_at
+            }
         });
 
     }
+);
 
-    const booking = bookings.find(item => item.booking_id === paymentRequest.booking_id);
-    const now = new Date();
-    paymentRequest.status = "PAID";
-    paymentRequest.method = method;
-    paymentRequest.paid_at = now;
-    paymentRequest.updated_at = now;
 
-    if (booking) {
 
-        booking.payment_status = "paid";
-        booking.status = "confirmed";
-        booking.updated_at = now;
-
-        createNotification({
-            userId: booking.customer_id,
-            title: "Booking confirmed",
-            message: "Your payment was received and your reservation is confirmed.",
-            type: "booking_confirmed",
-            bookingId: booking.booking_id
-        });
-        createNotification({
-            userId: booking.owner_id,
-            title: "Payment received",
-            message: `Payment was received for booking #${booking.booking_id}.`,
-            type: "payment_received",
-            bookingId: booking.booking_id
-        });
-
-    }
-
-    return res.json({
-        success: true,
-        message: "Payment confirmed and booking confirmed.",
-        payment_request: paymentRequest,
-        booking
-    });
-
-});   */
 // Mark payment as successful and update booking status
 function markPaymentSuccessful(paymentRequest) {
     const now = new Date();
@@ -1083,7 +1803,8 @@ app.post(
 
             const phoneNumber =
                 normalizeKenyanPhoneNumber(
-                    req.body.phoneNumber
+                    req.body.phoneNumber??
+                    req.body.phone_number
                 );
 
             if (!phoneNumber) {
@@ -1289,6 +2010,77 @@ app.post("/api/payments/payhero/callback", async (req, res) => {
     }
 });
 
+
+//payment status endpoint
+app.get(
+    "/api/payments/:paymentRequestId",
+    (req, res) => {
+        const paymentRequestId =
+            Number(req.params.paymentRequestId);
+
+        const paymentRequest =
+            paymentRequests.find(
+                item =>
+                    item.payment_request_id ===
+                    paymentRequestId
+            );
+
+        if (!paymentRequest) {
+            return res.status(404).json({
+                success: false,
+                message: "Payment request not found."
+            });
+        }
+
+        return res.json({
+            success: true,
+            payment: {
+                payment_request_id:
+                    paymentRequest.payment_request_id,
+
+                booking_id:
+                    paymentRequest.booking_id,
+
+                amount:
+                    paymentRequest.amount,
+
+                currency:
+                    paymentRequest.currency,
+
+                status:
+                    paymentRequest.status,
+
+                provider:
+                    paymentRequest.provider,
+
+                method:
+                    paymentRequest.method,
+
+                reference:
+                    paymentRequest.internal_reference,
+
+                payhero_reference:
+                    paymentRequest.payhero_reference,
+
+                checkout_request_id:
+                    paymentRequest.checkout_request_id,
+
+                transaction_id:
+                    paymentRequest.payhero_transaction_id,
+
+                result_description:
+                    paymentRequest.result_description,
+
+                created_at:
+                    paymentRequest.created_at,
+
+                updated_at:
+                    paymentRequest.updated_at
+            }
+        });
+    }
+);
+
 app.patch("/api/admin/payments/:paymentRequestId/refund", (req, res) => {
 
     if (!isAdmin(req)) {
@@ -1297,12 +2089,18 @@ app.patch("/api/admin/payments/:paymentRequestId/refund", (req, res) => {
 
     const paymentRequest = paymentRequests.find(item => item.payment_request_id === Number(req.params.paymentRequestId));
 
-    if (!paymentRequest || paymentRequest.status !== "PAID") {
-        return res.status(404).json({ success: false, message: "A paid payment request is required." });
-    }
+    if (
+    !paymentRequest ||
+    paymentRequest.status !== PAYMENT_STATUSES.SUCCESS
+) {
+    return res.status(400).json({
+        success: false,
+        message: "Only successful payments can be refunded."
+    });
+}
 
     const booking = bookings.find(item => item.booking_id === paymentRequest.booking_id);
-    paymentRequest.status = "REFUNDED";
+    paymentRequest.status = PAYMENT_STATUSES.CANCELED;
     paymentRequest.refunded_at = new Date();
 
     if (booking) {
