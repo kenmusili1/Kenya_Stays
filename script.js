@@ -1108,29 +1108,18 @@ function displayCounties(data) {
 
             <div class="county-image-wrap">
                 <img src="${countyImage}" alt="A welcoming short-term stay in ${countyName}, Kenya" title="Explore stays in ${countyName}, Kenya" loading="lazy" decoding="async">
-                <span class="county-image-label">${countyRegion}</span>
-            </div>
-
-            <div class="county-top">
-                <div class="county-icon">
-                    <i class="fa-solid fa-location-dot"></i>
+                <div class="county-overlay">
+                    <span class="county-image-label">${countyRegion}</span>
+                    <h3>${countyName}</h3>
+                    <div class="county-listing-summary">
+                        <span>${listingDisplay}</span>
+                        <small>${hasData ? "Recorded listings" : "Current data unavailable"}</small>
+                    </div>
+                    <a class="explore-link" href="https://www.airbnb.com/s/${encodeURIComponent(countyName + " Kenya")}/homes" target="_blank" rel="noopener noreferrer">
+                        Explore ${countyName}
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </a>
                 </div>
-                <span class="county-region">${county.region || ""}</span>
-            </div>
-
-            <h3>${county.county}</h3>
-
-            <div class="listing-number">${listingDisplay}</div>
-
-            <div class="listing-label">
-                ${hasData ? "Recorded listings" : "Current data unavailable"}
-            </div>
-
-            <div class="county-card-footer">
-                <a class="explore-link" href="https://www.airbnb.com/s/${encodeURIComponent(county.county + " Kenya")}/homes" target="_blank" rel="noopener noreferrer">
-                    Explore ${county.county}
-                    <i class="fa-solid fa-arrow-right"></i>
-                </a>
             </div>
 
         `;

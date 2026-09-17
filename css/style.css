@@ -1194,18 +1194,17 @@ a {
 }
 
 .county-card {
-    border: 1px solid #e2ebe5;
-    border-radius: 18px;
-    padding: 0 22px 22px;
-    background: white;
-    transition: 0.3s;
+    height: 330px;
+    border-radius: 22px;
+    background: #173b2f;
     position: relative;
     overflow: hidden;
+    box-shadow: 0 14px 32px rgba(13, 35, 28, 0.08);
+    transition: transform 0.28s ease, box-shadow 0.28s ease;
 }
 
 .county-image-wrap {
-    height: 150px;
-    margin: 0 -22px 20px;
+    height: 100%;
     position: relative;
     overflow: hidden;
     background: #e7f1ea;
@@ -1215,7 +1214,7 @@ a {
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, rgba(8, 39, 27, 0.02), rgba(8, 39, 27, 0.38));
+    background: linear-gradient(180deg, rgba(5, 21, 18, 0.04), rgba(5, 21, 18, 0.88));
     pointer-events: none;
 }
 
@@ -1231,10 +1230,7 @@ a {
 }
 
 .county-image-label {
-    position: absolute;
-    left: 14px;
-    bottom: 12px;
-    z-index: 1;
+    display: block;
     color: white;
     font-size: 11px;
     font-weight: 700;
@@ -1243,14 +1239,39 @@ a {
 }
 
 .county-card:hover {
-    transform: translateY(-7px);
-    box-shadow: 0 18px 45px rgba(24,72,48,0.12);
-    border-color: #b9dbc6;
+    transform: translateY(-8px);
+    box-shadow: 0 22px 40px rgba(13, 35, 28, 0.12);
 }
 
-.county-card h3 {
-    margin-top: 20px;
-    font-size: 21px;
+.county-overlay {
+    position: absolute;
+    inset: auto 0 0 0;
+    z-index: 1;
+    padding: 30px 22px 22px;
+    color: white;
+}
+
+.county-overlay h3 {
+    margin: 6px 0 8px;
+    font-size: 28px;
+    line-height: 1.1;
+}
+
+.county-listing-summary {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.county-listing-summary span {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.county-listing-summary small {
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 12px;
 }
 
 .county-info {
