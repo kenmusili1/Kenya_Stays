@@ -1009,31 +1009,43 @@ async function loadCounties() {
 
 /* ================= DISPLAY COUNTIES ================= */
 
-const countyImageMap = {
-    "Mombasa": "images/mombasa.jpg",
-    "Kwale": "images/diani.jpg",
-    "Kilifi": "images/Red-Pearl-of-Diani.jpg",
-    "Nairobi": "images/nairobi.jpg",
-    "Nakuru": "images/images%20(1).jpg",
-    "Kiambu": "images/images%20(2).jpg",
-    "Kisumu": "images/AB1_02.webp"
-};
-
-const countyRegionImages = {
-    "Coast": "images/diani.jpg",
-    "Nairobi": "images/nairobi.jpg",
-    "Rift Valley": "images/kenya-hero.jpg",
-    "Central": "images/images%20(1).jpg",
-    "Eastern": "images/AB1_02.webp",
-    "Western": "images/images%20(2).jpg",
-    "Nyanza": "images/AB1_02.webp",
-    "North Eastern": "images/kenya-hero.jpg"
-};
+const countyImagePool = [
+    "images/mombasa.jpg",
+    "images/diani.jpg",
+    "images/Red-Pearl-of-Diani.jpg",
+    "images/426758012.jpg",
+    "images/497178425.jpg",
+    "images/502124378.jpg",
+    "images/676803396.jpg",
+    "images/681930579.jpg",
+    "images/838895061.jpg",
+    "images/8da90cb1c0975eee9cef7dbebe9c165f.jpg",
+    "images/AB1_02.webp",
+    "images/images.jpg",
+    "images/images%20(1).jpg",
+    "images/images%20(2).jpg",
+    "images/images%20(3).jpg",
+    "images/images%20(4).jpg",
+    "images/images%20(5).jpg",
+    "images/images%20(6).jpg",
+    "images/images%20(7).jpg",
+    "images/images%20(8).jpg",
+    "images/images%20(9).jpg",
+    "images/images%20(10).jpg",
+    "images/images%20(11).jpg",
+    "images/0df7e9ce-b803-4697-a688-806255b55e10.avif",
+    "images/22371816-5dc7-4ca1-8c8b-521e9f148f83.avif",
+    "images/ed89b812-8f1d-4767-af23-18266d639c0e.avif",
+    "images/fbb3a375-96d8-4dd9-93f8-88ce61f5327e.avif",
+    "images/st-barts-utopic-1561473951.avif",
+    "images/WhatsApp-Image-2026-05-11-at-16.51.59-jpeg.webp",
+    "images/nairobi.jpg",
+    "images/kenya-hero.jpg"
+];
 
 function getCountyImage(county) {
-    return countyImageMap[county.county]
-        || countyRegionImages[county.region]
-        || "images/kenya-hero.jpg";
+    const imageIndex = ((county.id || 1) - 1) % countyImagePool.length;
+    return countyImagePool[imageIndex] || "images/kenya-hero.jpg";
 }
 
 function displayCounties(data) {
