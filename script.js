@@ -1009,6 +1009,33 @@ async function loadCounties() {
 
 /* ================= DISPLAY COUNTIES ================= */
 
+const countyImageMap = {
+    "Mombasa": "images/mombasa.jpg",
+    "Kwale": "images/diani.jpg",
+    "Kilifi": "images/Red-Pearl-of-Diani.jpg",
+    "Nairobi": "images/nairobi.jpg",
+    "Nakuru": "images/images%20(1).jpg",
+    "Kiambu": "images/images%20(2).jpg",
+    "Kisumu": "images/AB1_02.webp"
+};
+
+const countyRegionImages = {
+    "Coast": "images/diani.jpg",
+    "Nairobi": "images/nairobi.jpg",
+    "Rift Valley": "images/kenya-hero.jpg",
+    "Central": "images/images%20(1).jpg",
+    "Eastern": "images/AB1_02.webp",
+    "Western": "images/images%20(2).jpg",
+    "Nyanza": "images/AB1_02.webp",
+    "North Eastern": "images/kenya-hero.jpg"
+};
+
+function getCountyImage(county) {
+    return countyImageMap[county.county]
+        || countyRegionImages[county.region]
+        || "images/kenya-hero.jpg";
+}
+
 function displayCounties(data) {
 
     const grid =
@@ -1060,8 +1087,17 @@ function displayCounties(data) {
         const listingDisplay =
             hasData ? county.listings.toLocaleString() : "Data unavailable";
 
+        const countyImage = getCountyImage(county);
+        const countyName = county.county || "Kenya";
+        const countyRegion = county.region || "Kenya";
+
 
         card.innerHTML = `
+
+            <div class="county-image-wrap">
+                <img src="${countyImage}" alt="A welcoming short-term stay in ${countyName}, Kenya" title="Explore stays in ${countyName}, Kenya" loading="lazy" decoding="async">
+                <span class="county-image-label">${countyRegion}</span>
+            </div>
 
             <div class="county-top">
                 <div class="county-icon">
