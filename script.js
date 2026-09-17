@@ -1044,7 +1044,8 @@ const countyImagePool = [
 ];
 
 const countyImageOverrides = {
-    "Kitui": "images/images%20(10).jpg",
+    "Kitui": "images/images%20(8).jpg",
+    "Kiambu": "images/images%20(9).jpg",
     "Nyamira": "images/images%20(11).jpg"
 };
 
