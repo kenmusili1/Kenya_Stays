@@ -1043,9 +1043,16 @@ const countyImagePool = [
     "images/kenya-hero.jpg"
 ];
 
+const countyImageOverrides = {
+    "Kitui": "images/images%20(10).jpg",
+    "Nyamira": "images/images%20(11).jpg"
+};
+
 function getCountyImage(county) {
     const imageIndex = ((county.id || 1) - 1) % countyImagePool.length;
-    return countyImagePool[imageIndex] || "images/kenya-hero.jpg";
+    return countyImageOverrides[county.county]
+        || countyImagePool[imageIndex]
+        || "images/kenya-hero.jpg";
 }
 
 function displayCounties(data) {
