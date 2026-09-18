@@ -8,7 +8,6 @@ const port = process.env.PORT || 3001;
 const projectRoot = path.resolve(__dirname, "..");
 
 app.use(cors());
-app.use(express.json());
 app.use(express.static(projectRoot));
 app.use(apiApp);
 

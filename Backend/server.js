@@ -37,6 +37,58 @@ const PAYMENT_STATUSES = Object.freeze({
     REFUNDED: "REFUNDED"
 });
 
+// Once a payment reaches one of these, nothing (a stray STK response, a
+// duplicate/out-of-order callback, a retried webhook delivery) is allowed
+// to move it to a different status. This is what protects a paid booking
+// from being silently flipped back to FAILED/STK_INITIATED by a race
+// between the STK-push HTTP response and the Pay Hero callback, or by a
+// replayed callback arriving after the transaction already concluded.
+const TERMINAL_PAYMENT_STATUSES = new Set([
+    PAYMENT_STATUSES.SUCCESS,
+    PAYMENT_STATUSES.FAILED,
+    PAYMENT_STATUSES.CANCELLED,
+    PAYMENT_STATUSES.REFUNDED
+]);
+
+// A small, explicit allow-list of transitions permitted to leave a
+// terminal state. Everything else starting from a terminal state is
+// blocked. Right now the only sanctioned exception is an admin issuing a
+// refund on a successfully paid payment.
+const ALLOWED_TERMINAL_TRANSITIONS = new Map([
+    [PAYMENT_STATUSES.SUCCESS, new Set([PAYMENT_STATUSES.REFUNDED])]
+]);
+
+// The only safe way to change a payment request's status. Refuses to move
+// a payment out of a terminal state unless the transition is explicitly
+// allow-listed above, and is a no-op if it's already at the requested
+// status. Every place that mutates paymentRequest.status should go
+// through this instead of assigning it directly.
+function transitionPaymentStatus(paymentRequest, nextStatus) {
+    const current = paymentRequest.status;
+
+    if (current === nextStatus) {
+        return { changed: false, from: current, to: nextStatus, reason: "no-op" };
+    }
+
+    if (TERMINAL_PAYMENT_STATUSES.has(current)) {
+        const allowedFromCurrent = ALLOWED_TERMINAL_TRANSITIONS.get(current);
+
+        if (!allowedFromCurrent || !allowedFromCurrent.has(nextStatus)) {
+            console.warn(
+                `Blocked payment transition ${current} -> ${nextStatus} for ` +
+                `payment_request_id=${paymentRequest.payment_request_id}: already terminal.`
+            );
+
+            return { changed: false, from: current, to: nextStatus, reason: "terminal" };
+        }
+    }
+
+    paymentRequest.status = nextStatus;
+    paymentRequest.updated_at = new Date();
+
+    return { changed: true, from: current, to: nextStatus };
+}
+
 
 const customerCareMessages = [];
 const customerCareStatuses = [
@@ -199,10 +251,7 @@ function updatePaymentStatus(paymentRequest, status) {
         return false;
     }
 
-    paymentRequest.status = status;
-    paymentRequest.updated_at = new Date();
-
-    return true;
+    return transitionPaymentStatus(paymentRequest, status).changed;
 }
 
 
@@ -300,16 +349,35 @@ function markPaymentSuccessful(
         };
     }
 
-    if (
+    const wasAlreadySuccessful =
         paymentRequest.status ===
-        PAYMENT_STATUSES.SUCCESS
-    ) {
+        PAYMENT_STATUSES.SUCCESS;
 
+    const transition =
+        transitionPaymentStatus(
+            paymentRequest,
+            PAYMENT_STATUSES.SUCCESS
+        );
+
+    if (!transition.changed) {
+
+        if (wasAlreadySuccessful) {
+            return {
+                success: true,
+                alreadyProcessed: true,
+                message:
+                    "Payment was already processed."
+            };
+        }
+
+        // The payment already concluded as FAILED/CANCELLED/REFUNDED.
+        // A success signal arriving after that point is out-of-order or
+        // replayed - don't silently promote it to paid.
         return {
-            success: true,
+            success: false,
             alreadyProcessed: true,
             message:
-                "Payment was already processed."
+                `Payment is already ${paymentRequest.status}; success callback ignored.`
         };
     }
 
@@ -329,17 +397,8 @@ function markPaymentSuccessful(
         };
     }
 
-    const now =
-        new Date();
-
-    paymentRequest.status =
-        PAYMENT_STATUSES.SUCCESS;
-
     paymentRequest.paid_at =
-        now;
-
-    paymentRequest.updated_at =
-        now;
+        paymentRequest.updated_at;
 
     booking.payment_status =
         "paid";
@@ -348,7 +407,7 @@ function markPaymentSuccessful(
         "confirmed";
 
     booking.updated_at =
-        now;
+        paymentRequest.updated_at;
 
     createNotification({
 
@@ -414,7 +473,8 @@ function validatePayHeroConfiguration() {
     const required = [
         "PAYHERO_API_USERNAME",
         "PAYHERO_API_PASSWORD",
-        "PAYHERO_CALLBACK_URL"
+        "PAYHERO_CALLBACK_URL",
+        "PAYHERO_CHANNEL_ID",
     ];
 
     const missing = required.filter(
@@ -429,6 +489,22 @@ function validatePayHeroConfiguration() {
         return false;
     }
 
+    // Pay Hero's callback API has no HMAC/signature verification (unlike
+    // e.g. Paystack or PayPal webhooks) - it just POSTs to whatever URL you
+    // registered. A shared-secret token appended to that URL is the
+    // practical way to stop someone from guessing a booking's reference
+    // (which is returned to the client when the booking is created) and
+    // POSTing a forged "success" callback directly. Not fatal if unset -
+    // just clearly not recommended for anything handling real money.
+    if (!process.env.PAYHERO_CALLBACK_TOKEN) {
+        console.warn(
+            "PAYHERO_CALLBACK_TOKEN is not set. The Pay Hero callback " +
+            "endpoint will accept requests from anyone who can guess a " +
+            "payment reference - set PAYHERO_CALLBACK_TOKEN to a long " +
+            "random value before going to production."
+        );
+    }
+
     console.log(
         "Pay Hero configuration loaded."
     );
@@ -436,6 +512,42 @@ function validatePayHeroConfiguration() {
     return true;
 }
 
+// Builds the callback URL we hand to Pay Hero when initiating a payment,
+// embedding the shared-secret token (if configured) as a query parameter
+// so the callback route below can verify the request actually came from
+// us having told Pay Hero to call it - not just someone who found the URL.
+function buildPayHeroCallbackUrl() {
+    const baseUrl = process.env.PAYHERO_CALLBACK_URL;
+
+    if (!baseUrl) {
+        return baseUrl;
+    }
+
+    const token = process.env.PAYHERO_CALLBACK_TOKEN;
+
+    if (!token) {
+        return baseUrl;
+    }
+
+    const separator = baseUrl.includes("?") ? "&" : "?";
+
+    return `${baseUrl}${separator}token=${encodeURIComponent(token)}`;
+}
+
+// Verifies the ?token= query parameter on an inbound callback request
+// against PAYHERO_CALLBACK_TOKEN. Returns true (and logs a loud warning)
+// when no token is configured at all, since that's a deliberate opt-out
+// rather than a failed check - configuring the token is what turns this
+// verification on.
+function verifyPayHeroCallbackToken(req) {
+    const expectedToken = process.env.PAYHERO_CALLBACK_TOKEN;
+
+    if (!expectedToken) {
+        return true;
+    }
+
+    return req.query.token === expectedToken;
+}
 // Phone number normalization for Kenyan M-Pesa format
 function normalizeKenyanPhoneNumber(phoneNumber) {
     const cleaned = String(phoneNumber || "")
@@ -509,9 +621,19 @@ function normalizePayHeroCallback(callbackData) {
             response.status ||
             null,
 
+        // Pay Hero's actual M-Pesa callback payload names this
+        // MpesaReceiptNumber (e.g. "SAE3YULR0Y"). TransactionID/
+        // transaction_id are kept as fallbacks for other providers/shapes.
         transactionId:
+            response.MpesaReceiptNumber ||
+            response.mpesa_receipt_number ||
             response.TransactionID ||
             response.transaction_id ||
+            null,
+
+        phone:
+            response.Phone ||
+            response.phone ||
             null
     };
 }
@@ -629,14 +751,48 @@ function processPayHeroCallback(
         };
     }
 
+    if (
+        TERMINAL_PAYMENT_STATUSES.has(
+            paymentRequest.status
+        )
+    ) {
+        // The transaction already concluded. This is almost always Pay
+        // Hero retrying a delivery we already acted on, but it can also
+        // be a stale/out-of-order/replayed/forged callback - either way,
+        // we must NOT let it re-run success/failure side effects, move
+        // the status again, or even overwrite the descriptive fields
+        // (result_description, payhero_status, etc.) with whatever this
+        // callback claims. The record stays exactly as it was when the
+        // transaction concluded; only the console log notes that a
+        // post-terminal callback arrived, for visibility/investigation.
+        console.warn(
+            `Ignoring callback for payment_request_id=${paymentRequest.payment_request_id}: ` +
+            `already ${paymentRequest.status}. Callback claimed status="${normalized.status}", ` +
+            `resultCode=${normalized.resultCode}.`
+        );
+
+        return {
+            success:
+                paymentRequest.status ===
+                PAYMENT_STATUSES.SUCCESS,
+            processed: false,
+            alreadyProcessed: true,
+            message:
+                `Payment is already ${paymentRequest.status}; callback acknowledged without further action.`
+        };
+    }
+
+    // Record the latest callback payload for audit purposes. Only reached
+    // for a payment that's still in progress (PENDING/PROCESSING/
+    // STK_INITIATED) - a terminal payment returned above without any of
+    // this running, so these fields can no longer be touched once the
+    // transaction has concluded.
     paymentRequest.callback_data =
         callbackData;
 
-    paymentRequest.updated_at =
-        new Date();
-
     paymentRequest.payhero_transaction_id =
-        normalized.transactionId;
+        normalized.transactionId ||
+        paymentRequest.payhero_transaction_id;
 
     paymentRequest.checkout_request_id =
         normalized.checkoutRequestId ||
@@ -644,27 +800,13 @@ function processPayHeroCallback(
 
     paymentRequest.payhero_status =
         normalized.status ||
-        null;
+        paymentRequest.payhero_status;
 
     paymentRequest.result_code =
         normalized.resultCode;
 
     paymentRequest.result_description =
         normalized.resultDescription;
-
-    if (
-        paymentRequest.status ===
-        PAYMENT_STATUSES.SUCCESS
-    ) {
-
-        return {
-            success: true,
-            processed: false,
-            alreadyProcessed: true,
-            message:
-                "Payment callback was already processed."
-        };
-    }
 
     const validation =
         validateSuccessfulPayHeroPayment(
@@ -674,15 +816,14 @@ function processPayHeroCallback(
 
     if (!validation.valid) {
 
-        paymentRequest.status =
-            PAYMENT_STATUSES.FAILED;
-
-        paymentRequest.updated_at =
-            new Date();
+        transitionPaymentStatus(
+            paymentRequest,
+            PAYMENT_STATUSES.FAILED
+        );
 
         return {
             success: false,
-            processed: false,
+            processed: true,
             message:
                 validation.message
         };
@@ -715,6 +856,24 @@ function processPayHeroCallback(
 app.use(cors());
 
 app.use(express.json());
+
+// A malformed JSON body makes express.json() call next(err) with a
+// SyntaxError. Without this, Express's default error handler would return
+// an HTML page (and, outside production, a stack trace) instead of JSON -
+// not something a public-facing endpoint like the Pay Hero callback
+// should ever expose.
+app.use((err, req, res, next) => {
+    if (err instanceof SyntaxError && "body" in err) {
+        console.warn("Rejected malformed JSON body:", req.originalUrl);
+
+        return res.status(400).json({
+            success: false,
+            message: "Malformed JSON in request body."
+        });
+    }
+
+    return next(err);
+});
 
 // Test route
 
@@ -936,6 +1095,7 @@ app.post("/api/properties/recommendations", (req, res) => {
     });
 
 });
+
 
 
 app.post("/api/bookings", (req, res) => {
@@ -1250,6 +1410,27 @@ app.post(
 
         try {
 
+            if (!verifyPayHeroCallbackToken(req)) {
+
+                console.warn(
+                    "Pay Hero callback rejected: missing or invalid token.",
+                    { ip: req.ip, query: req.query }
+                );
+
+                // Deliberately vague - don't tell a would-be attacker
+                // whether the endpoint or the token check is the problem.
+                return res.status(401).json({
+                    success: false,
+                    message:
+                        "Unauthorized."
+                });
+            }
+
+            console.log(
+                "Pay Hero callback received:",
+                JSON.stringify(req.body)
+            );
+
             const result =
                 processPayHeroCallback(
                     req.body
@@ -1478,9 +1659,7 @@ app.get(
                     "No payment request exists for this booking."
             });
         }
-
-
-        return res.json({
+                return res.json({
             success: true,
 
             payment: {
@@ -1632,137 +1811,6 @@ app.get(
 
 
 
-// Mark payment as successful and update booking status
-function markPaymentSuccessful(paymentRequest) {
-    const now = new Date();
-
-    if (paymentRequest.status === PAYMENT_STATUSES.SUCCESS) {
-        return {
-            alreadyProcessed: true
-        };
-    }
-
-    paymentRequest.status = PAYMENT_STATUSES.SUCCESS;
-    paymentRequest.updated_at = now;
-    paymentRequest.paid_at = now;
-
-    const booking = bookings.find(
-        booking => booking.booking_id === paymentRequest.booking_id
-    );
-
-    if (!booking) {
-        return {
-            alreadyProcessed: false,
-            booking: null
-        };
-    }
-
-    booking.payment_status = "paid";
-    booking.status = "confirmed";
-    booking.updated_at = now;
-
-    createNotification({
-        userId: booking.customer_id,
-        title: "Booking confirmed",
-        message: "Your payment was received and your reservation is confirmed.",
-        type: "booking_confirmed",
-        bookingId: booking.booking_id
-    });
-
-    createNotification({
-        userId: booking.owner_id,
-        title: "Payment received",
-        message: `Payment was received for booking #${booking.booking_id}.`,
-        type: "payment_received",
-        bookingId: booking.booking_id
-    });
-
-    return {
-        alreadyProcessed: false,
-        booking
-    };
-}
-
-// Process Pay Hero callback and update payment request and booking status
-function processPayHeroCallback(callbackData) {
-    const normalized = normalizePayHeroCallback(callbackData);
-
-    if (!normalized) {
-        return {
-            success: false,
-            processed: false,
-            message: "Invalid Pay Hero callback."
-        };
-    }
-
-    const paymentRequest =
-        findPaymentRequestByReference(
-            normalized.externalReference
-        );
-
-    if (!paymentRequest) {
-        console.error(
-            "Pay Hero callback could not be matched:",
-            normalized.externalReference
-        );
-
-        return {
-            success: false,
-            processed: false,
-            message: "Payment request could not be matched."
-        };
-    }
-
-    paymentRequest.callback_data = callbackData;
-    paymentRequest.updated_at = new Date();
-
-    paymentRequest.payhero_transaction_id =
-        normalized.transactionId;
-
-    paymentRequest.checkout_request_id =
-        normalized.checkoutRequestId ||
-        paymentRequest.checkout_request_id;
-
-    paymentRequest.payhero_status =
-        normalized.status || null;
-
-    paymentRequest.result_code =
-        normalized.resultCode;
-
-    paymentRequest.result_description =
-        normalized.resultDescription;
-
-    const validation =
-        validateSuccessfulPayHeroPayment(
-            paymentRequest,
-            normalized
-        );
-
-    if (!validation.valid) {
-        paymentRequest.status =
-            PAYMENT_STATUSES.FAILED;
-
-        paymentRequest.updated_at = new Date();
-
-        return {
-            success: false,
-            processed: false,
-            message: validation.message
-        };
-    }
-
-    const result =
-        markPaymentSuccessful(paymentRequest);
-
-    return {
-        success: result.success,
-        processed: !result.alreadyProcessed,
-        alreadyProcessed:
-            result.alreadyProcessed || false,
-        message: result.message
-    };
-}
-
 // Payment initiation endpoint
 app.post(
     "/api/payments/:paymentRequestId/stk-push",
@@ -1871,8 +1919,7 @@ app.post(
                     customerName,
 
                     callbackUrl:
-                        process.env
-                            .PAYHERO_CALLBACK_URL
+                        buildPayHeroCallbackUrl()
                 });
 
 
@@ -1892,8 +1939,22 @@ app.post(
             }
 
 
-            paymentRequest.status =
-                PAYMENT_STATUSES.STK_INITIATED;
+            const stkTransition = transitionPaymentStatus(
+                paymentRequest,
+                PAYMENT_STATUSES.STK_INITIATED
+            );
+
+            if (!stkTransition.changed && stkTransition.reason === "terminal") {
+                // A callback beat us here - the transaction already
+                // concluded (most likely SUCCESS, since Pay Hero can
+                // resolve very fast) while we were waiting on this HTTP
+                // response. Don't clobber it; just keep the metadata.
+                console.warn(
+                    `STK push response for payment_request_id=${paymentRequest.payment_request_id} ` +
+                    `arrived after the payment already reached ${paymentRequest.status}. ` +
+                    "Status left unchanged."
+                );
+            }
 
 
             paymentRequest.payhero_reference =
@@ -1964,14 +2025,15 @@ app.post(
 
 
             if (paymentRequest) {
-                paymentRequest.status =
-                    PAYMENT_STATUSES.FAILED;
+                const failureTransition = transitionPaymentStatus(
+                    paymentRequest,
+                    PAYMENT_STATUSES.FAILED
+                );
 
-                paymentRequest.failure_reason =
-                    error.message;
-
-                paymentRequest.updated_at =
-                    new Date();
+                if (failureTransition.changed) {
+                    paymentRequest.failure_reason =
+                        error.message;
+                }
             }
 
 
@@ -1985,101 +2047,7 @@ app.post(
     }
 );
 
-// Callback endpoint
-app.post("/api/payments/payhero/callback", async (req, res) => {
-    try {
-        console.log("========== PAY HERO CALLBACK ==========");
-        console.log(JSON.stringify(req.body, null, 2));
-        console.log("========================================");
 
-        const result =
-            processPayHeroCallback(req.body);
-
-        return res.status(200).json(result);
-
-    } catch (error) {
-        console.error(
-            "Pay Hero callback processing error:",
-            error
-        );
-
-        return res.status(500).json({
-            success: false,
-            message: "Callback processing failed."
-        });
-    }
-});
-
-
-//payment status endpoint
-app.get(
-    "/api/payments/:paymentRequestId",
-    (req, res) => {
-        const paymentRequestId =
-            Number(req.params.paymentRequestId);
-
-        const paymentRequest =
-            paymentRequests.find(
-                item =>
-                    item.payment_request_id ===
-                    paymentRequestId
-            );
-
-        if (!paymentRequest) {
-            return res.status(404).json({
-                success: false,
-                message: "Payment request not found."
-            });
-        }
-
-        return res.json({
-            success: true,
-            payment: {
-                payment_request_id:
-                    paymentRequest.payment_request_id,
-
-                booking_id:
-                    paymentRequest.booking_id,
-
-                amount:
-                    paymentRequest.amount,
-
-                currency:
-                    paymentRequest.currency,
-
-                status:
-                    paymentRequest.status,
-
-                provider:
-                    paymentRequest.provider,
-
-                method:
-                    paymentRequest.method,
-
-                reference:
-                    paymentRequest.internal_reference,
-
-                payhero_reference:
-                    paymentRequest.payhero_reference,
-
-                checkout_request_id:
-                    paymentRequest.checkout_request_id,
-
-                transaction_id:
-                    paymentRequest.payhero_transaction_id,
-
-                result_description:
-                    paymentRequest.result_description,
-
-                created_at:
-                    paymentRequest.created_at,
-
-                updated_at:
-                    paymentRequest.updated_at
-            }
-        });
-    }
-);
 
 app.patch("/api/admin/payments/:paymentRequestId/refund", (req, res) => {
 
@@ -2089,18 +2057,23 @@ app.patch("/api/admin/payments/:paymentRequestId/refund", (req, res) => {
 
     const paymentRequest = paymentRequests.find(item => item.payment_request_id === Number(req.params.paymentRequestId));
 
-    if (
-    !paymentRequest ||
-    paymentRequest.status !== PAYMENT_STATUSES.SUCCESS
-) {
-    return res.status(400).json({
-        success: false,
-        message: "Only successful payments can be refunded."
-    });
-}
+    if (!paymentRequest) {
+        return res.status(404).json({
+            success: false,
+            message: "Payment request not found."
+        });
+    }
+
+    const transition = transitionPaymentStatus(paymentRequest, PAYMENT_STATUSES.REFUNDED);
+
+    if (!transition.changed) {
+        return res.status(400).json({
+            success: false,
+            message: "Only successful payments can be refunded."
+        });
+    }
 
     const booking = bookings.find(item => item.booking_id === paymentRequest.booking_id);
-    paymentRequest.status = PAYMENT_STATUSES.CANCELED;
     paymentRequest.refunded_at = new Date();
 
     if (booking) {
