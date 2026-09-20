@@ -185,9 +185,12 @@ const routeTrayClose =
 
 let counties = [];
 
-const API_BASE_URL = window.location.origin && window.location.origin !== "null"
-    ? window.location.origin
-    : "http://localhost:3000";
+const isLocalDevelopmentHost = ["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname);
+const API_BASE_URL = isLocalDevelopmentHost
+    ? "http://localhost:3000"
+    : window.location.origin && window.location.origin !== "null"
+        ? window.location.origin
+        : "http://localhost:3000";
 
 function getStoredAuthState() {
     try {
@@ -689,7 +692,7 @@ async function loadOwnerDashboard() {
                         <p>${property.location}, ${property.city} · ${property.accommodation}</p>
                     </div>
                     <div class="owner-booking-meta">
-                        <strong>KSh ${Number(property.nightly_rate || 0).toLocaleString()} / night</strong>
+                        <strong>KSh ${Number(property.nightly_rate || 0).toLocaleString()} / day</strong>
                         <span class="booking-status ${property.approved ? "success" : "pending"}">${property.approved ? "Approved" : "Pending approval"}</span>
                     </div>
                 </article>
@@ -835,7 +838,7 @@ async function loadAdminDashboard() {
                             <p>${property.location}, ${property.city} · ${property.accommodation}</p>
                         </div>
                         <div class="owner-booking-meta">
-                            <strong>KSh ${Number(property.nightly_rate || 0).toLocaleString()} / night</strong>
+                            <strong>KSh ${Number(property.nightly_rate || 0).toLocaleString()} / day</strong>
                             <span class="booking-status pending">Pending approval</span>
                             <div class="owner-actions">
                                 <button type="button" data-property-approve="true" data-property-id="${property.property_id}">Approve</button>
