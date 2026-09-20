@@ -1725,3 +1725,495 @@ a {
     .footer-grid { grid-template-columns: 1fr; }
     .footer-bottom { flex-direction: column; }
 }
+
+/* =========================
+   SIMPLE BOOKING-STYLE LAYOUT
+========================= */
+
+:root {
+    --ui-blue: #283845;
+    --ui-blue-dark: #1c2932;
+    --ui-yellow: #e07a5f;
+    --ui-ink: #1f2937;
+    --ui-muted: #667085;
+    --ui-line: #d9dee7;
+    --ui-surface: #f5f7fa;
+}
+
+body {
+    color: var(--ui-ink);
+    background: var(--ui-surface);
+    font-family: "DM Sans", Arial, sans-serif;
+}
+
+.container {
+    width: min(1180px, calc(100% - 32px));
+}
+
+.site-header {
+    background: var(--ui-blue);
+    border-bottom: 0;
+}
+
+.nav-container {
+    min-height: 64px;
+}
+
+.logo-wordmark .logo-kenya,
+.logo-wordmark .logo-stays {
+    color: white;
+}
+
+.logo-icon-image {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+}
+
+.navigation a,
+.header-contact {
+    color: white;
+}
+
+.navigation a:hover {
+    color: var(--ui-yellow);
+}
+
+.mobile-menu-btn {
+    color: white;
+}
+
+.hero {
+    min-height: 470px;
+    background-image: linear-gradient(90deg, rgba(40, 56, 69, 0.92), rgba(40, 56, 69, 0.62)), url("../images/kenya-hero.jpg");
+}
+
+.hero::before,
+.hero-features {
+    display: none;
+}
+
+.hero-text {
+    max-width: 680px;
+}
+
+.hero-badge {
+    margin-bottom: 12px;
+    padding: 5px 10px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.14);
+    font-size: 12px;
+}
+
+.hero h1 {
+    max-width: 600px;
+    margin-bottom: 12px;
+    font-size: clamp(34px, 5vw, 58px);
+    line-height: 1.08;
+}
+
+.hero h1 span {
+    color: white;
+}
+
+.hero p {
+    max-width: 560px;
+    margin-bottom: 20px;
+    font-size: 17px;
+}
+
+.hero-cta {
+    margin-bottom: 14px;
+    padding: 13px 18px;
+    border-radius: 4px;
+    background: var(--ui-yellow);
+    color: var(--ui-ink);
+    box-shadow: none;
+}
+
+.hero-cta:hover {
+    background: #c96149;
+    box-shadow: none;
+    transform: none;
+    filter: none;
+}
+
+.hero-search {
+    max-width: 760px;
+    padding: 5px;
+    border: 4px solid var(--ui-yellow);
+    border-radius: 4px;
+    box-shadow: 0 8px 20px rgba(0, 25, 75, 0.22);
+}
+
+.search-box {
+    padding: 0 12px;
+}
+
+.search-box input {
+    padding: 12px 0;
+}
+
+.search-button {
+    padding: 0 24px;
+    border-radius: 2px;
+    background: var(--ui-blue);
+}
+
+.search-button:hover {
+    background: var(--ui-blue-dark);
+    transform: none;
+}
+
+.statistics {
+    margin-top: 0;
+    border-bottom: 1px solid var(--ui-line);
+}
+
+.stats-grid {
+    gap: 0;
+}
+
+.stat-card {
+    min-height: 76px;
+    padding: 14px 10px;
+    border-right: 1px solid var(--ui-line);
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.stat-card:last-child {
+    border-right: 0;
+}
+
+.stat-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 4px;
+    background: #e8f0ff;
+    color: var(--ui-blue);
+    font-size: 15px;
+}
+
+.stat-card strong {
+    font-size: 18px;
+}
+
+.stat-card span {
+    font-size: 11px;
+}
+
+.intro-section,
+.featured-section,
+.about-section,
+.cta-section {
+    padding: 48px 0;
+}
+
+.intro-section {
+    background: white;
+}
+
+.intro-gallery {
+    min-height: 300px;
+}
+
+.intro-gallery img,
+.about-image,
+.featured-card,
+.destination-card,
+.county-card {
+    border-radius: 4px;
+}
+
+.intro-copy h2,
+.section-heading h2,
+.about-content h2,
+.customer-care-intro h2,
+.booking-intro h2 {
+    color: var(--ui-ink);
+    font-size: clamp(28px, 4vw, 42px);
+}
+
+.section-label {
+    color: var(--ui-blue);
+    font-size: 11px;
+    letter-spacing: 1px;
+}
+
+.booking-form,
+.owner-booking-card,
+.owner-property-card,
+.admin-row,
+.admin-ticket,
+.owner-stat,
+.admin-stat,
+.recommendation-card {
+    border-color: var(--ui-line);
+    border-radius: 4px;
+    box-shadow: none;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea,
+.sort-area select {
+    border-color: var(--ui-line);
+    border-radius: 3px;
+    min-height: 44px;
+}
+
+.booking-submit,
+.direction-button,
+.county-button,
+.cta-button {
+    border-radius: 3px;
+    background: var(--ui-blue);
+}
+
+.booking-submit:hover,
+.direction-button:hover,
+.county-button:hover {
+    background: var(--ui-blue-dark);
+}
+
+.owner-dashboard-section,
+.admin-dashboard-section,
+.popular-section,
+.customer-care-section {
+    padding: 48px 0;
+}
+
+.owner-dashboard-section,
+.popular-section {
+    background: white;
+}
+
+.admin-dashboard-section,
+.customer-care-section {
+    background: var(--ui-surface);
+}
+
+.owner-property-list,
+.owner-bookings,
+.admin-bookings,
+.admin-tickets {
+    gap: 8px;
+}
+
+.owner-booking-card {
+    padding: 16px;
+}
+
+.booking-status {
+    border-radius: 3px;
+}
+
+@media (max-width: 600px) {
+    .container {
+        width: min(100% - 24px, 520px);
+    }
+
+    .site-header {
+        position: sticky;
+    }
+
+    .nav-container {
+        min-height: 56px;
+    }
+
+    .logo-wordmark .logo-kenya {
+        font-size: 25px;
+    }
+
+    .logo-wordmark .logo-stays {
+        font-size: 20px;
+    }
+
+    .logo-icon-image {
+        width: 32px;
+        height: 32px;
+    }
+
+    .navigation.open {
+        top: 56px;
+        padding: 8px 12px;
+        background: var(--ui-blue);
+        border-bottom: 0;
+    }
+
+    .navigation.open a {
+        width: 100%;
+        padding: 10px 4px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+    }
+
+    .hero {
+        min-height: 520px;
+        align-items: flex-start;
+        padding: 58px 0 34px;
+        background-position: 62% center;
+    }
+
+    .hero h1 {
+        font-size: 36px;
+    }
+
+    .hero p {
+        font-size: 15px;
+        line-height: 1.45;
+    }
+
+    .hero-search {
+        display: grid;
+        gap: 4px;
+        width: 100%;
+        border-width: 3px;
+    }
+
+    .search-box {
+        min-height: 48px;
+        background: white;
+    }
+
+    .search-button {
+        min-height: 46px;
+    }
+
+    .hero-request-panel {
+        width: 100%;
+    }
+
+    .property-panel .booking-form,
+    .booking-form {
+        padding: 16px;
+    }
+
+    .statistics {
+        overflow: hidden;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .stat-card:nth-child(2) {
+        border-right: 0;
+    }
+
+    .stat-card:nth-child(-n + 2) {
+        border-bottom: 1px solid var(--ui-line);
+    }
+
+    .intro-section {
+        padding: 32px 0;
+    }
+
+    .intro-gallery {
+        display: none;
+    }
+
+    .intro-copy h2,
+    .section-heading h2,
+    .about-content h2,
+    .customer-care-intro h2,
+    .booking-intro h2 {
+        font-size: 27px;
+    }
+
+    .intro-copy > p,
+    .section-heading p {
+        font-size: 14px;
+    }
+
+    .intro-benefits {
+        gap: 10px;
+        margin: 18px 0;
+    }
+
+    .intro-benefits > div > i {
+        flex-basis: 30px;
+        width: 30px;
+        height: 30px;
+        border-radius: 3px;
+    }
+
+    .featured-section {
+        padding: 32px 0;
+    }
+
+    .featured-card {
+        height: 220px;
+    }
+
+    .featured-overlay {
+        padding: 18px;
+    }
+
+    .featured-overlay p {
+        display: none;
+    }
+
+    .owner-summary,
+    .admin-summary {
+        gap: 8px;
+    }
+
+    .owner-stat,
+    .admin-stat {
+        padding: 12px;
+    }
+
+    .owner-stat strong,
+    .admin-stat strong {
+        font-size: 19px;
+    }
+
+    .owner-booking-card {
+        display: grid;
+        gap: 12px;
+    }
+
+    .owner-booking-meta {
+        justify-items: start;
+        min-width: 0;
+    }
+
+    .admin-row {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .county-card {
+        height: 230px;
+    }
+
+    .county-overlay {
+        padding: 18px;
+    }
+
+    .county-overlay h3 {
+        font-size: 23px;
+    }
+
+    .destination-card {
+        height: 250px;
+    }
+
+    .about-image {
+        display: none;
+    }
+
+    .cta-section {
+        padding: 34px 0;
+    }
+
+    .cta-content h2 {
+        font-size: 27px;
+    }
+
+    .route-tray {
+        right: 12px;
+        bottom: 12px;
+        border-radius: 4px;
+    }
+}
