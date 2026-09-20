@@ -2110,7 +2110,43 @@ body {
     }
 
     .intro-gallery {
-        display: none;
+        display: block;
+        width: 100%;
+        min-height: 238px;
+        padding: 0 42px 42px 0;
+    }
+
+    .intro-gallery-main {
+        width: 100%;
+        height: 210px;
+        border-radius: 4px;
+        box-shadow: 0 10px 24px rgba(40, 56, 69, 0.14);
+    }
+
+    .intro-gallery-detail {
+        right: 0;
+        bottom: 0;
+        width: 42%;
+        height: 112px;
+        border: 5px solid white;
+        border-radius: 4px;
+        box-shadow: 0 8px 18px rgba(40, 56, 69, 0.16);
+    }
+
+    .intro-gallery-tag {
+        left: 10px;
+        bottom: 10px;
+        gap: 7px;
+        padding: 7px 10px;
+        border-radius: 4px;
+        background: white;
+        color: var(--ui-ink);
+        font-size: 11px;
+        box-shadow: 0 5px 14px rgba(40, 56, 69, 0.14);
+    }
+
+    .intro-gallery-tag i {
+        color: #e07a5f;
     }
 
     .intro-copy h2,
