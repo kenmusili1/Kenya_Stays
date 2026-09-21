@@ -1788,13 +1788,63 @@ body {
     background-image: linear-gradient(90deg, rgba(40, 56, 69, 0.92), rgba(40, 56, 69, 0.62)), url("../images/kenya-hero.jpg");
 }
 
+.hero-photo-card {
+    position: absolute;
+    z-index: 1;
+    top: 50%;
+    right: max(5%, calc((100% - 1180px) / 2));
+    width: min(31vw, 360px);
+    height: 360px;
+    transform: translateY(-50%) rotate(2deg);
+    overflow: hidden;
+    border: 8px solid rgba(255, 255, 255, 0.92);
+    background: #ffffff;
+    box-shadow: 0 24px 55px rgba(0, 25, 75, 0.28);
+}
+
+.hero-photo-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.hero-photo-caption {
+    position: absolute;
+    right: 14px;
+    bottom: 14px;
+    left: 14px;
+    display: grid;
+    gap: 2px;
+    padding: 11px 13px;
+    color: white;
+    background: rgba(40, 56, 69, 0.84);
+}
+
+.hero-photo-caption span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.hero-photo-caption span i {
+    color: var(--ui-yellow);
+}
+
+.hero-photo-caption strong {
+    font-size: 17px;
+}
+
 .hero::before,
 .hero-features {
     display: none;
 }
 
 .hero-text {
-    max-width: 680px;
+    max-width: 650px;
 }
 
 .hero-badge {
@@ -1839,7 +1889,7 @@ body {
 }
 
 .hero-search {
-    max-width: 760px;
+    max-width: 650px;
     padding: 5px;
     border: 4px solid var(--ui-yellow);
     border-radius: 4px;
@@ -2064,6 +2114,31 @@ body {
         background-position: 62% center;
     }
 
+    .hero-photo-card {
+        top: auto;
+        right: 12px;
+        bottom: 24px;
+        width: 132px;
+        height: 164px;
+        transform: rotate(3deg);
+        border-width: 5px;
+    }
+
+    .hero-photo-caption {
+        right: 5px;
+        bottom: 5px;
+        left: 5px;
+        padding: 6px 7px;
+    }
+
+    .hero-photo-caption span {
+        font-size: 8px;
+    }
+
+    .hero-photo-caption strong {
+        font-size: 11px;
+    }
+
     .hero h1 {
         font-size: 36px;
     }
@@ -2077,6 +2152,7 @@ body {
         display: grid;
         gap: 4px;
         width: 100%;
+        max-width: calc(100% - 12px);
         border-width: 3px;
     }
 
