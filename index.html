@@ -23,7 +23,7 @@
   </div></header>
 
   <main>
-    <section class="hero" id="home"><div class="hero-photo-card" aria-label="Featured Kenya stay"><img src="images/AB1_02.webp" alt="Bright coastal accommodation in Kenya"><div class="hero-photo-caption"><span><i class="fa-solid fa-location-dot"></i> Diani Beach</span><strong>Coastal stays</strong></div></div><div class="container hero-content"><div class="hero-text">
+    <section class="hero" id="home"><div class="container hero-content"><div class="hero-text">
       <span class="hero-badge"><i class="fa-solid fa-location-dot"></i> EXPLORE KENYA</span>
       <h1>Find Your Perfect <span>Stay in Kenya</span></h1>
       <p>Explore short-term rentals, holiday homes and Airbnb accommodation across Kenya's 47 counties.</p>
@@ -31,11 +31,11 @@
         <button class="hero-cta" id="heroRequestButton" type="button">Book Now <i class="fa-solid fa-arrow-right"></i></button>
         <div class="hero-request-panel" id="heroRequestPanel" hidden>
           <form class="booking-form hero-booking-form" id="bookingForm">
-            <div class="form-field"><label for="bookingLocation">Location</label><input id="bookingLocation" name="location" type="text" placeholder="Nairobi" required></div>
+            <div class="booking-step-heading"><span>1</span><div><strong>Choose your stay</strong><small>Enter your destination and dates.</small></div></div>
+            <div class="form-field"><label for="bookingLocation">Search place</label><input id="bookingLocation" name="location" type="text" placeholder="Search Nairobi, Mombasa, Diani..." autocomplete="address-level2" required></div>
             <div class="form-row"><div class="form-field"><label for="checkIn">Check-in</label><input id="checkIn" name="checkIn" type="date" required></div><div class="form-field"><label for="checkOut">Check-out</label><input id="checkOut" name="checkOut" type="date" required></div></div>
-            <div class="form-row"><div class="form-field"><label for="guests">Guests</label><input id="guests" name="guests" type="number" min="1" value="2" required></div><div class="form-field"><label for="accommodation">Accommodation</label><select id="accommodation" name="accommodation" required><option value="Apartment">Apartment</option><option value="Studio">Studio</option><option value="Villa">Villa</option><option value="Lounge">Lounge</option></select></div></div>
-            <div class="form-field"><label for="specialRequest">Special request</label><textarea id="specialRequest" name="specialRequest" rows="4" placeholder="Tell us anything we should know"></textarea></div>
-            <button class="booking-submit" id="bookingSubmit" type="submit">Book Now <i class="fa-solid fa-arrow-right"></i></button>
+            <div class="form-row"><div class="form-field"><label for="guests">Guests</label><input id="guests" name="guests" type="number" min="1" max="20" value="2" required></div><div class="form-field"><label for="accommodation">Type of house</label><select id="accommodation" name="accommodation" required><option value="Apartment">Apartment</option><option value="Studio">Studio</option><option value="Villa">Villa</option><option value="Lounge">Lounge</option></select></div></div>
+            <button class="booking-submit" id="bookingSubmit" type="submit">Continue to payment <i class="fa-solid fa-arrow-right"></i></button>
             <p class="booking-message" id="bookingMessage" aria-live="polite"></p>
             <div class="property-recommendations" id="propertyRecommendations" aria-live="polite"></div>
           </form>

@@ -1020,6 +1020,29 @@ app.post("/api/bookings", (req, res) => {
     booking.owner_id = req.body.owner_id || recommendedProperty?.owner_id || null;
     booking.amount = recommendedProperty?.total_amount || null;
 
+    let paymentRequest = null;
+    if (booking.amount) {
+        booking.payment_status = "pending";
+        paymentRequest = {
+            payment_request_id: paymentRequests.length + 1,
+            booking_id: booking.booking_id,
+            customer_id: booking.customer_id,
+            amount: Number(booking.amount),
+            currency: "KES",
+            provider: null,
+            method: null,
+            internal_reference: `KS-PAY-${Date.now()}-${booking.booking_id}`,
+            payhero_reference: null,
+            checkout_request_id: null,
+            phone_number: null,
+            status: PAYMENT_STATUSES.PENDING,
+            callback_data: null,
+            created_at: now,
+            updated_at: now
+        };
+        paymentRequests.push(paymentRequest);
+    }
+
     bookings.push(booking);
 
     const ownerNotification = booking.owner_id
@@ -1037,6 +1060,7 @@ app.post("/api/bookings", (req, res) => {
         message: "Stay request received.",
         booking,
         recommendations: propertyMatches.recommendations,
+        payment_request: paymentRequest,
         notification: ownerNotification
     });
 
@@ -1116,7 +1140,8 @@ app.patch("/api/owners/:ownerId/bookings/:bookingId", (req, res) => {
             type: "booking_accepted",
             bookingId: booking.booking_id
         });
-        paymentRequests.push({
+        if (!paymentRequests.some(request => request.booking_id === booking.booking_id)) {
+            paymentRequests.push({
                 payment_request_id: paymentRequests.length + 1,
 
                 booking_id: booking.booking_id,
@@ -1141,7 +1166,8 @@ app.patch("/api/owners/:ownerId/bookings/:bookingId", (req, res) => {
 
                 created_at: now,
                 updated_at: now
-        });
+            });
+        }
 
     }
 
@@ -1351,6 +1377,12 @@ app.post("/api/payments/:paymentRequestId/stk-push", (req, res) => {
     paymentRequest.phone_number = phoneNumber;
     paymentRequest.status = PAYMENT_STATUSES.STK_INITIATED;
     paymentRequest.updated_at = new Date();
+
+    const booking = bookings.find(item => item.booking_id === paymentRequest.booking_id);
+    if (booking) {
+        booking.payment_status = "processing";
+        booking.updated_at = new Date();
+    }
 
     return res.status(202).json({
         success: true,

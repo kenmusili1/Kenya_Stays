@@ -417,10 +417,10 @@ async function submitBooking(event) {
         }
 
         bookingMessage.textContent =
-            `${data.message} Request #${data.booking.booking_id}.`;
+            `${data.message} Booking #${data.booking.booking_id}.`;
         bookingMessage.className = "booking-message success";
         displayPropertyRecommendations(data.recommendations || []);
-        bookingForm.reset();
+        displayPaymentStep(data.payment_request);
 
     } catch (error) {
 
@@ -434,6 +434,69 @@ async function submitBooking(event) {
 
     }
 
+}
+
+function displayPaymentStep(paymentRequest) {
+
+    if (!propertyRecommendations) {
+        return;
+    }
+
+    if (!paymentRequest) {
+        propertyRecommendations.insertAdjacentHTML(
+            "beforeend",
+            '<p class="booking-message">Your request is waiting for a property match. Payment will be available once the stay is accepted.</p>'
+        );
+        return;
+    }
+
+    propertyRecommendations.insertAdjacentHTML("afterbegin", `
+        <section class="payment-step" aria-labelledby="paymentStepTitle">
+            <div class="booking-step-heading"><span>2</span><div><strong id="paymentStepTitle">Confirm and pay</strong><small>KSh ${Number(paymentRequest.amount || 0).toLocaleString()} via M-Pesa</small></div></div>
+            <p>Enter your M-Pesa number to receive a payment prompt and confirm your booking.</p>
+            <div class="payment-row">
+                <label class="sr-only" for="paymentPhone">M-Pesa phone number</label>
+                <input id="paymentPhone" type="tel" inputmode="tel" placeholder="e.g. 0712 345 678" autocomplete="tel" required>
+                <button class="booking-submit" id="paymentSubmit" type="button">Pay and confirm <i class="fa-solid fa-lock"></i></button>
+            </div>
+            <p class="booking-message" id="paymentMessage" aria-live="polite"></p>
+        </section>
+    `);
+
+    const paymentSubmit = document.getElementById("paymentSubmit");
+    const paymentPhone = document.getElementById("paymentPhone");
+    const paymentMessage = document.getElementById("paymentMessage");
+
+    paymentSubmit?.addEventListener("click", async () => {
+        const phoneNumber = paymentPhone?.value.trim();
+
+        if (!phoneNumber) {
+            paymentMessage.textContent = "Enter your M-Pesa phone number to continue.";
+            paymentMessage.className = "booking-message error";
+            paymentPhone?.focus();
+            return;
+        }
+
+        paymentSubmit.disabled = true;
+        paymentMessage.textContent = "Sending payment prompt...";
+        paymentMessage.className = "booking-message";
+
+        try {
+            const data = await fetchJson(`${API_BASE_URL}/api/payments/${paymentRequest.payment_request_id}/stk-push`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ phoneNumber })
+            });
+
+            paymentMessage.textContent = `${data.message} Check your phone to complete payment.`;
+            paymentMessage.className = "booking-message success";
+            bookingForm.reset();
+        } catch (error) {
+            paymentMessage.textContent = error.message || "Unable to start payment.";
+            paymentMessage.className = "booking-message error";
+            paymentSubmit.disabled = false;
+        }
+    });
 }
 
 
