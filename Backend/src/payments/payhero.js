@@ -1,35 +1,20 @@
-
-const PAYHERO_BASE_URL =
-    process.env.PAYHERO_BASE_URL || "https://backend.payhero.co.ke/api/v2";
-
-// How long to wait for Pay Hero to respond before giving up. Without this,
-// a hung request would leave a payment stuck in PROCESSING indefinitely -
-// the STK-push route can only mark it FAILED if the fetch actually rejects.
-const PAYHERO_REQUEST_TIMEOUT_MS =
-    Number(process.env.PAYHERO_REQUEST_TIMEOUT_MS) || 20000;
+const config = require("../config");
 
 function getAuthorizationHeader() {
-    const username = process.env.PAYHERO_API_USERNAME;
-    const password = process.env.PAYHERO_API_PASSWORD;
-
-    if (!username || !password) {
-        throw new Error("Pay Hero API credentials are not configured.");
-    }
-
     const credentials = Buffer.from(
-        `${username}:${password}`
+        `${config.payhero.username}:${config.payhero.password}`
     ).toString("base64");
 
     return `Basic ${credentials}`;
 }
 
 async function payHeroRequest(endpoint, options = {}) {
-    const url = `${PAYHERO_BASE_URL}${endpoint}`;
+    const url = `${config.payhero.baseUrl}${endpoint}`;
 
     const controller = new AbortController();
     const timeout = setTimeout(
         () => controller.abort(),
-        PAYHERO_REQUEST_TIMEOUT_MS
+        config.payhero.requestTimeoutMs
     );
 
     let response;
@@ -47,7 +32,7 @@ async function payHeroRequest(endpoint, options = {}) {
     } catch (error) {
         if (error.name === "AbortError") {
             const timeoutError = new Error(
-                `Pay Hero did not respond within ${PAYHERO_REQUEST_TIMEOUT_MS}ms.`
+                `Pay Hero did not respond within ${config.payhero.requestTimeoutMs}ms.`
             );
 
             timeoutError.code = "PAYHERO_TIMEOUT";
@@ -68,9 +53,6 @@ async function payHeroRequest(endpoint, options = {}) {
             message: error.message,
             code: error.cause?.code,
             cause: error.cause?.message,
-            hostname: error.cause?.hostname,
-            address: error.cause?.address,
-            port: error.cause?.port,
             url
         });
 
@@ -79,13 +61,11 @@ async function payHeroRequest(endpoint, options = {}) {
         clearTimeout(timeout);
     }
 
-    const contentType =
-        response.headers.get("content-type") || "";
+    const contentType = response.headers.get("content-type") || "";
 
-    const data =
-        contentType.includes("application/json")
-            ? await response.json()
-            : await response.text();
+    const data = contentType.includes("application/json")
+        ? await response.json()
+        : await response.text();
 
     if (!response.ok) {
         const error = new Error(
@@ -108,19 +88,10 @@ async function initiateMpesaStkPush({
     customerName,
     callbackUrl
 }) {
-    const channelId = Number(process.env.PAYHERO_CHANNEL_ID);
-
-    if (!Number.isFinite(channelId)) {
-        throw new Error(
-            "PAYHERO_CHANNEL_ID is not configured (or is not a valid number) - " +
-            "refusing to send an STK push with an invalid channel."
-        );
-    }
-
     const payload = {
         amount: Math.round(Number(amount)),
         phone_number: phoneNumber,
-        channel_id: channelId,
+        channel_id: config.payhero.channelId,
         provider: "m-pesa",
         external_reference: reference
     };
@@ -139,9 +110,36 @@ async function initiateMpesaStkPush({
     });
 }
 
+// Builds the callback URL handed to Pay Hero, embedding the shared-secret
+// token as a query parameter (Pay Hero has no HMAC/signature verification
+// on its own, unlike Paystack/PayPal webhooks - this is the practical
+// mitigation against a forged callback).
+function buildCallbackUrl() {
+    const baseUrl = config.payhero.callbackUrl;
+    const token = config.payhero.callbackToken;
 
+    if (!token) {
+        return baseUrl;
+    }
+
+    const separator = baseUrl.includes("?") ? "&" : "?";
+
+    return `${baseUrl}${separator}token=${encodeURIComponent(token)}`;
+}
+
+function verifyCallbackToken(req) {
+    const expectedToken = config.payhero.callbackToken;
+
+    if (!expectedToken) {
+        return true;
+    }
+
+    return req.query.token === expectedToken;
+}
 
 module.exports = {
     payHeroRequest,
-    initiateMpesaStkPush
+    initiateMpesaStkPush,
+    buildCallbackUrl,
+    verifyCallbackToken
 };
